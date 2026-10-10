@@ -28,7 +28,7 @@ export default function LoginPage() {
     }
   };
 
-  const fillCredentials = (em: string, pw = 'Admin@123456') => {
+  const fillCredentials = (em = 'bhairaram@gmail.com', pw = 'Bhairaram@123') => {
     setEmail(em);
     setPassword(pw);
     setError(null);
@@ -65,7 +65,7 @@ export default function LoginPage() {
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-xl font-serif-luxury font-bold text-[#2d231c]">Sign in to your account</CardTitle>
           <CardDescription className="text-[#705f52] text-xs">
-            Enter your staff credentials or select a fast-login role demo below.
+            Enter your Super Admin credentials or click Fast Fill below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -77,11 +77,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Staff Email Address"
+              label="Admin Email Address"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. jaipur.manager@blishspa.com"
+              placeholder="bhairaram@gmail.com"
               required
             />
             <Input
@@ -104,62 +104,31 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Role Demo Fast-Fill Section */}
+          {/* Super Admin Fast-Fill Section */}
           <div className="mt-6 pt-5 border-t border-[#f0e8dc]">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#705f52] mb-2.5 text-center">
-              Quick Role Demo (Pre-configured Users)
+              Super Administrator Access
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => fillCredentials('superadmin@blishspa.com')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-[#fcfbf8] border border-[#e8e0d5] hover:border-[#b5915f] hover:bg-[#fbf7f0] text-left transition-colors cursor-pointer"
+                onClick={() => fillCredentials('bhairaram@gmail.com', 'Bhairaram@123')}
+                className="flex items-center justify-between p-3 rounded-xl bg-[#fcfbf8] border border-[#e8e0d5] hover:border-[#b5915f] hover:bg-[#fbf7f0] text-left transition-colors cursor-pointer"
               >
-                <Shield className="w-4 h-4 text-[#b5915f] shrink-0" />
-                <div>
-                  <span className="font-bold text-[#2d231c] block">Super Admin</span>
-                  <span className="text-[10px] text-[#705f52]">Global HQ</span>
+                <div className="flex items-center gap-2.5">
+                  <Shield className="w-4 h-4 text-[#b5915f] shrink-0" />
+                  <div>
+                    <span className="font-bold text-[#2d231c] block">Super Admin (bhairaram@gmail.com)</span>
+                    <span className="text-[10px] text-[#705f52]">Full Global Network Access</span>
+                  </div>
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillCredentials('jaipur.manager@blishspa.com')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-[#fcfbf8] border border-[#e8e0d5] hover:border-[#b5915f] hover:bg-[#fbf7f0] text-left transition-colors cursor-pointer"
-              >
-                <Building2 className="w-4 h-4 text-[#117a65] shrink-0" />
-                <div>
-                  <span className="font-bold text-[#2d231c] block">Jaipur Spa</span>
-                  <span className="text-[10px] text-[#705f52]">India Branch</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillCredentials('dubai.reception@blishspa.com')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-[#fcfbf8] border border-[#e8e0d5] hover:border-[#b5915f] hover:bg-[#fbf7f0] text-left transition-colors cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-[#b5915f] shrink-0" />
-                <div>
-                  <span className="font-bold text-[#2d231c] block">Receptionist</span>
-                  <span className="text-[10px] text-[#705f52]">Check-in desk</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillCredentials('dubai.manager@blishspa.com')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-[#fcfbf8] border border-[#e8e0d5] hover:border-[#b5915f] hover:bg-[#fbf7f0] text-left transition-colors cursor-pointer"
-              >
-                <User className="w-4 h-4 text-[#705f52] shrink-0" />
-                <div>
-                  <span className="font-bold text-[#2d231c] block">Branch Manager</span>
-                  <span className="text-[10px] text-[#705f52]">Branch Head</span>
-                </div>
+                <span className="text-[11px] font-semibold text-[#b5915f] bg-[#f7f0e4] px-2 py-0.5 rounded-md">
+                  Click to fill
+                </span>
               </button>
             </div>
             <p className="text-[10px] text-[#705f52] mt-3 text-center">
-              Password for all seeded accounts: <code className="text-[#3e2c1e] font-bold font-mono">Admin@123456</code>
+              Super Admin: <code className="text-[#3e2c1e] font-bold font-mono">bhairaram@gmail.com</code> | Pass: <code className="text-[#3e2c1e] font-bold font-mono">Bhairaram@123</code>
             </p>
           </div>
         </CardContent>
