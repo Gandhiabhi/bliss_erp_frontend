@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none">
+  <defs>
+    <!-- Rich metallic luxury champagne gold gradient -->
+    <linearGradient id="spaGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7E7C4" />
+      <stop offset="25%" stop-color="#E2C488" />
+      <stop offset="50%" stop-color="#C5A059" />
+      <stop offset="75%" stop-color="#EBD5A6" />
+      <stop offset="100%" stop-color="#9E7934" />
+    </linearGradient>
+    <!-- Soft warm shadow for high contrast -->
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Botanical Leaf & Vine "B" Monogram -->
+  <g filter="url(#goldGlow)">
+    <!-- Main stem / spine of B -->
+    <path d="M 160 25 C 160 22, 163 20, 166 20 L 198 20 C 220 20, 236 30, 236 50 C 236 64, 226 74, 212 78 C 230 82, 242 96, 242 114 C 242 136, 222 148, 198 148 L 166 148 C 163 148, 160 146, 160 143 Z" 
+          stroke="url(#spaGold)" stroke-width="4.5" fill="none" stroke-linecap="round" />
+    
+    <!-- Inner curves of B -->
+    <path d="M 160 80 L 208 80" stroke="url(#spaGold)" stroke-width="3.5" stroke-linecap="round" />
+
+    <!-- Delicate botanical vine wrapping around the B -->
+    <path d="M 148 135 C 152 105, 172 75, 202 62 C 228 50, 252 52, 264 36" 
+          stroke="url(#spaGold)" stroke-width="3" fill="none" stroke-linecap="round" />
+
+    <!-- Leaves on the vine -->
+    <!-- Leaf 1 (Top right) -->
+    <path d="M 264 36 C 275 32, 282 20, 278 12 C 270 12, 260 22, 264 36 Z" fill="url(#spaGold)" />
+    <!-- Leaf 2 (Upper branch) -->
+    <path d="M 248 45 C 258 46, 266 54, 264 62 C 255 60, 247 52, 248 45 Z" fill="url(#spaGold)" />
+    <!-- Leaf 3 (Middle branch) -->
+    <path d="M 224 56 C 232 50, 238 40, 232 34 C 224 38, 220 48, 224 56 Z" fill="url(#spaGold)" />
+    <!-- Leaf 4 (Center curve) -->
+    <path d="M 194 66 C 196 56, 190 48, 182 50 C 182 60, 188 66, 194 66 Z" fill="url(#spaGold)" />
+    <!-- Leaf 5 (Lower belly) -->
+    <path d="M 174 88 C 182 84, 192 92, 190 100 C 180 98, 174 94, 174 88 Z" fill="url(#spaGold)" />
+    <!-- Leaf 6 (Lower vine start) -->
+    <path d="M 152 118 C 142 120, 134 112, 138 104 C 148 106, 154 112, 152 118 Z" fill="url(#spaGold)" />
+
+    <!-- Small floral dew drops / buds -->
+    <circle cx="258" cy="28" r="2.5" fill="url(#spaGold)" />
+    <circle cx="218" cy="72" r="2.5" fill="url(#spaGold)" />
+    <circle cx="168" cy="62" r="2.5" fill="url(#spaGold)" />
+  </g>
+
+  <!-- Typography: THE BLISS -->
+  <text x="200" y="196" 
+        text-anchor="middle" 
+        fill="url(#spaGold)" 
+        font-family="'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif" 
+        font-size="36" 
+        font-weight="700" 
+        letter-spacing="5"
+        filter="url(#goldGlow)">
+    THE BLISS
+  </text>
+
+  <!-- Typography: INTERNATIONAL SPA -->
+  <text x="200" y="222" 
+        text-anchor="middle" 
+        fill="url(#spaGold)" 
+        font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" 
+        font-size="11" 
+        font-weight="600" 
+        letter-spacing="7"
+        opacity="0.95"
+        filter="url(#goldGlow)">
+    INTERNATIONAL SPA
+  </text>
+</svg>

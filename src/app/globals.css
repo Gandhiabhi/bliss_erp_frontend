@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #fbf9f5; /* Warm Luxury Ivory Linen from Website Theme */
+    --foreground: #2d231c; /* Deep Espresso Charcoal */
+    --card: #ffffff;
+    --card-foreground: #2d231c;
+    --popover: #ffffff;
+    --popover-foreground: #2d231c;
+    --primary: #3e2c1e; /* Deep Warm Espresso Brown from Website Header */
+    --primary-foreground: #f8f5ee;
+    --gold: #b5915f; /* Camel / Desert Sand Gold from Website Buttons */
+    --gold-hover: #a47f4e;
+    --gold-light: #f5efe6;
+    --secondary: #f4efe6;
+    --secondary-foreground: #3e2c1e;
+    --muted: #f7f3ec;
+    --muted-foreground: #705f52;
+    --accent: #117a65; /* Spa Herbal Emerald */
+    --accent-foreground: #ffffff;
+    --destructive: #be3a34;
+    --destructive-foreground: #ffffff;
+    --border: #e8e0d5; /* Soft Warm Linen Border */
+    --input: #ffffff;
+    --ring: #b5915f;
+    --radius: 0.875rem;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-serif-luxury {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5efe6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4c8b8;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b5915f;
+}
+
+/* Luxury Spa Glass effect */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(232, 224, 213, 0.9);
+}
+
+.glass-card {
+  background: #ffffff;
+  border: 1px solid #e8e0d5;
+  box-shadow: 0 1px 3px 0 rgba(62, 44, 30, 0.04), 0 1px 2px -1px rgba(62, 44, 30, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: #d8cdbf;
+  box-shadow: 0 8px 24px -4px rgba(62, 44, 30, 0.08);
+}
+
+/* Metallic Champagne Gold text gradient */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #c5a059 0%, #e0c896 45%, #a8823c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-metallic-glow {
+  filter: drop-shadow(0 2px 8px rgba(197, 160, 89, 0.35));
+}
+
+.espresso-gradient-text {
+  background: linear-gradient(135deg, #3e2c1e 0%, #634731 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.emerald-gradient-text {
+  background: linear-gradient(135deg, #117a65 0%, #0d5c4c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
