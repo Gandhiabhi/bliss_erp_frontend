@@ -15,6 +15,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
+import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import {
   Receipt,
   CreditCard,
@@ -47,7 +48,7 @@ export default function BillingPage() {
   const [paymentCustomerId, setPaymentCustomerId] = useState('');
   const [paymentInvoiceId, setPaymentInvoiceId] = useState('');
   const [paymentAmount, setPaymentAmount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'CASH' | 'BANK_TRANSFER' | 'UPI'>('CARD');
+  const [paymentMethod, setPaymentMethod] = useState('CREDIT_CARD');
   const [paymentRef, setPaymentRef] = useState('');
 
   // Refund Form State
@@ -119,7 +120,7 @@ export default function BillingPage() {
     setPaymentCustomerId('');
     setPaymentInvoiceId('');
     setPaymentAmount(0);
-    setPaymentMethod('CARD');
+    setPaymentMethod('CREDIT_CARD');
     setPaymentRef('');
     setFormError('');
   };
@@ -137,15 +138,16 @@ export default function BillingPage() {
       return;
     }
 
+    const pay = paymentFields(paymentMethod, 'Billing');
     createPaymentMutation.mutate({
       branchId: currentBranch?.id,
       customerId: paymentCustomerId,
       invoiceId: paymentInvoiceId || undefined,
       amount: Number(paymentAmount),
       currency: 'INR',
-      paymentMethod,
+      paymentMethod: pay.paymentMethod,
+      notes: pay.notes,
       transactionReference: paymentRef || undefined,
-      status: 'PAID',
     });
   };
 
@@ -378,7 +380,7 @@ export default function BillingPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            {p.paymentMethod}
+                            {p.notes?.split(' — ')[0] || p.paymentMethod}
                           </span>
                         </td>
                         <td className="px-6 py-4 font-bold text-[#117a65]">
@@ -583,10 +585,11 @@ export default function BillingPage() {
                   onChange={(e) => setPaymentMethod(e.target.value as any)}
                   className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-amber-500 shadow-2xs"
                 >
-                  <option value="CARD">Credit/Debit Card</option>
-                  <option value="CASH">Cash</option>
-                  <option value="BANK_TRANSFER">Bank Wire</option>
-                  <option value="UPI">UPI / Digital</option>
+                  {PAYMENT_CHOICES.map((choice) => (
+                    <option key={choice.id} value={choice.id}>
+                      {choice.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

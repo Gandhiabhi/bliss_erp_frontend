@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
+import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import {
   CreditCard,
   Plus,
@@ -63,7 +64,7 @@ export default function MembershipsPage() {
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'PENDING' | 'PARTIAL'>('PAID');
-  const [paymentMethod, setPaymentMethod] = useState('CARD');
+  const [paymentMethod, setPaymentMethod] = useState('CREDIT_CARD');
   const [customServices, setCustomServices] = useState<CustomServiceRow[]>([]);
   const [formError, setFormError] = useState('');
 
@@ -208,7 +209,8 @@ export default function MembershipsPage() {
       discount: Number(discount),
       tax: Number(tax),
       recordPayment: paymentStatus === 'PAID',
-      paymentMethod,
+      paymentMethod: paymentFields(paymentMethod).paymentMethod,
+      notes: paymentFields(paymentMethod, 'Membership').notes,
       currency: 'INR',
     };
 
@@ -794,10 +796,11 @@ export default function MembershipsPage() {
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-amber-500 shadow-2xs"
                 >
-                  <option value="CARD">Credit/Debit Card</option>
-                  <option value="CASH">Cash</option>
-                  <option value="BANK_TRANSFER">Bank Transfer</option>
-                  <option value="UPI">UPI / Digital</option>
+                  {PAYMENT_CHOICES.map((choice) => (
+                    <option key={choice.id} value={choice.id}>
+                      {choice.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

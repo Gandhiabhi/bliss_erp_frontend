@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsApi } from '@/lib/api/settings.api';
-import { useAuth } from '@/lib/auth/auth-context';
+import { branchesApi } from '@/lib/api/branches.api';
+import { useAuth, BranchView } from '@/lib/auth/auth-context';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -23,9 +24,10 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { currentBranch, isSuperAdmin } = useAuth();
+  const { currentBranch, isSuperAdmin, setActiveBranchId } = useAuth();
   const queryClient = useQueryClient();
 
+  const [businessName, setBusinessName] = useState('');
   const [taxRate, setTaxRate] = useState(5);
   const [invoicePrefix, setInvoicePrefix] = useState('INV-');
   const [expiryWarningDays, setExpiryWarningDays] = useState(7);
@@ -37,6 +39,10 @@ export default function SettingsPage() {
     queryKey: ['settings', currentBranch?.id],
     queryFn: () => settingsApi.getSettings(currentBranch?.id),
   });
+
+  useEffect(() => {
+    if (currentBranch?.name) setBusinessName(currentBranch.name);
+  }, [currentBranch?.name]);
 
   useEffect(() => {
     if (data?.data?.settings) {
@@ -51,6 +57,49 @@ export default function SettingsPage() {
   // Update setting mutation
   const updateMutation = useMutation({
     mutationFn: async () => {
+      if (isSuperAdmin && businessName.trim()) {
+        const list = await branchesApi.getAll();
+        const branches = list.data || [];
+        if (branches.length <= 1) {
+          const name = businessName.trim();
+          if (branches.length === 0) {
+            const code = name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase() || 'MAIN';
+            const created = await branchesApi.create({
+              name,
+              branchCode: code,
+              country: 'India',
+              city: 'Main',
+              currency: 'INR',
+              timezone: 'Asia/Kolkata',
+            });
+            const branch = created.data;
+            const view: BranchView = {
+              id: branch.id,
+              branchCode: branch.branchCode,
+              name: branch.name,
+              currency: branch.currency,
+              timezone: branch.timezone,
+              country: branch.country,
+              city: branch.city,
+            };
+            setActiveBranchId(branch.id, view);
+          } else {
+            const updated = await branchesApi.update(branches[0].id, { name });
+            const branch = updated.data;
+            setActiveBranchId(branch.id, {
+              id: branch.id,
+              branchCode: branch.branchCode,
+              name: branch.name,
+              currency: branch.currency,
+              timezone: branch.timezone,
+              country: branch.country,
+              city: branch.city,
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ['branches-list'] });
+          queryClient.invalidateQueries({ queryKey: ['branches'] });
+        }
+      }
       await settingsApi.updateSetting('taxRate', Number(taxRate), currentBranch?.id);
       await settingsApi.updateSetting('invoicePrefix', invoicePrefix, currentBranch?.id);
       await settingsApi.updateSetting('expiryWarningDays', Number(expiryWarningDays), currentBranch?.id);
@@ -94,7 +143,15 @@ export default function SettingsPage() {
                 Active Branch Configuration
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {isSuperAdmin && (
+                <Input
+                  label="Business name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="Your spa name"
+                />
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 space-y-1">
                   <span className="text-xs text-slate-500">Branch Name</span>

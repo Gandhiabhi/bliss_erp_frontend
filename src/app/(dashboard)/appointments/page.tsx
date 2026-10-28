@@ -137,10 +137,6 @@ export default function AppointmentsPage() {
     e.preventDefault();
     setFormError('');
 
-    if (!currentBranch?.id) {
-      setFormError('Select a branch from the header before booking.');
-      return;
-    }
     if (!serviceId) {
       setFormError('Please select a treatment or massage.');
       return;
@@ -155,7 +151,7 @@ export default function AppointmentsPage() {
           return;
         }
         const created = await customersApi.create({
-          branchId: currentBranch.id,
+          branchId: currentBranch?.id,
           firstName: newFirstName.trim(),
           lastName: newLastName.trim() || undefined,
           phone: newPhone.trim(),
@@ -167,7 +163,7 @@ export default function AppointmentsPage() {
       }
 
       await appointmentsApi.create({
-        branchId: currentBranch.id,
+        branchId: currentBranch?.id,
         customerId: resolvedCustomerId,
         serviceId,
         serviceVariantId: serviceVariantId || undefined,

@@ -71,8 +71,10 @@ export async function apiClient<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      const errorMessage =
-        data?.message || data?.error || `Request failed with status ${response.status}`;
+      const rawMessage = data?.message || data?.error;
+      const errorMessage = Array.isArray(rawMessage)
+        ? rawMessage.join(' ')
+        : rawMessage || `Request failed with status ${response.status}`;
 
       if (response.status === 401 && typeof window !== 'undefined') {
         // If unauthenticated, redirect to login unless already on login page

@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, ServiceEntitlement } from '@/lib/api/customers.api';
+import { CustomerDeskActions } from '@/components/customers/customer-desk';
 import { visitsApi } from '@/lib/api/visits.api';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import {
@@ -114,7 +115,7 @@ export default function CustomerProfilePage() {
         badge={<StatusBadge status={customer.status} />}
       >
         <Link href="/check-in">
-          <Button variant="gold" size="md">
+          <Button variant="secondary" size="md">
             <Sparkles className="w-4 h-4" />
             Check-in & Redeem
           </Button>
@@ -124,6 +125,16 @@ export default function CustomerProfilePage() {
           Add Note
         </Button>
       </PageHeader>
+
+      <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+        <p className="text-sm font-semibold text-slate-900">This guest is already in the system</p>
+        <p className="text-xs text-slate-600 mt-1 mb-3">
+          Add another service with a therapist, or assign a membership, on this same record.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <CustomerDeskActions customer={customer} />
+        </div>
+      </div>
 
       {/* Profile Overview Header Card */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

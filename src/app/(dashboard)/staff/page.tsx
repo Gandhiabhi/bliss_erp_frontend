@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { staffApi, Staff } from '@/lib/api/staff.api';
+import { branchesApi } from '@/lib/api/branches.api';
 import { useAuth } from '@/lib/auth/auth-context';
 import { PageHeader } from '@/components/ui/page-header';
 import { SearchInput } from '@/components/ui/search-input';
@@ -27,7 +28,7 @@ import {
 } from 'lucide-react';
 
 export default function StaffPage() {
-  const { currentBranch } = useAuth();
+  const { currentBranch, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -42,8 +43,16 @@ export default function StaffPage() {
   const [specialization, setSpecialization] = useState('Swedish & Deep Tissue Massage');
   const [joiningDate, setJoiningDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  const [staffBranchId, setStaffBranchId] = useState('');
 
   // Fetch Staff
+  const { data: branchesRes } = useQuery({
+    queryKey: ['branches-list'],
+    queryFn: () => branchesApi.getAll(),
+    enabled: isSuperAdmin,
+  });
+  const branches = branchesRes?.data || [];
+
   const { data: staffData, isLoading, error } = useQuery({
     queryKey: ['staff', currentBranch?.id, search],
     queryFn: () =>
@@ -95,7 +104,7 @@ export default function StaffPage() {
     }
 
     createMutation.mutate({
-      branchId: currentBranch?.id,
+      branchId: staffBranchId || currentBranch?.id,
       name: name.trim(),
       phone: phone || undefined,
       email: email || undefined,
@@ -258,6 +267,27 @@ export default function StaffPage() {
               <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
                 <span>{formError}</span>
+              </div>
+            )}
+
+            {isSuperAdmin && branches.length > 1 && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Branch *
+                </label>
+                <select
+                  value={staffBranchId || currentBranch?.id || ''}
+                  onChange={(e) => setStaffBranchId(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+                  required
+                >
+                  <option value="">Choose a branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} ({branch.city})
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 

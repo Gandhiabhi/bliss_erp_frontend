@@ -19,12 +19,15 @@ import { plansApi } from '@/lib/api/plans.api';
 import { visitsApi } from '@/lib/api/visits.api';
 import { membershipsApi } from '@/lib/api/memberships.api';
 import { paymentsApi } from '@/lib/api/payments.api';
+import { staffApi } from '@/lib/api/staff.api';
+import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCurrency } from '@/lib/utils';
+import { CustomerDeskActions } from '@/components/customers/customer-desk';
 import { Users, UserPlus, Phone, Mail, ArrowUpRight } from 'lucide-react';
 
 export default function CustomersPage() {
-  const { activeBranchId, currentBranch } = useAuth();
+  const { activeBranchId, currentBranch, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -44,7 +47,8 @@ export default function CustomersPage() {
   const [serviceVariantId, setServiceVariantId] = useState('');
   const [planId, setPlanId] = useState('');
   const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [paymentChoiceId, setPaymentChoiceId] = useState('CASH');
+  const [staffId, setStaffId] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
   const branchId = currentBranch?.id || activeBranchId || undefined;
@@ -58,6 +62,11 @@ export default function CustomersPage() {
     queryKey: ['customer-offer-plans', branchId],
     queryFn: () => plansApi.getAll({ branchId, status: 'ACTIVE' }),
     enabled: isAddModalOpen && offerType === 'membership',
+  });
+  const { data: staffRes } = useQuery({
+    queryKey: ['customer-offer-staff', branchId],
+    queryFn: () => staffApi.getAll({ branchId, status: 'ACTIVE' }),
+    enabled: isAddModalOpen && offerType === 'service',
   });
   const selectedService = servicesRes?.data?.find((s) => s.id === serviceId);
   const selectedPlan = plansRes?.data?.find((p) => p.id === planId);
@@ -79,9 +88,6 @@ export default function CustomersPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!branchId) {
-        throw new Error('Select a branch from the header before adding a customer.');
-      }
       const created = await customersApi.create({
         branchId,
         firstName,
@@ -95,8 +101,10 @@ export default function CustomersPage() {
 
       if (offerType === 'service') {
         if (!serviceId) throw new Error('Choose the massage or service.');
+        if (!staffId) throw new Error('Choose the therapist who will give this service.');
         const paid = Number(amount);
         if (!paid || paid <= 0) throw new Error('Enter the amount the customer paid.');
+        const pay = paymentFields(paymentChoiceId, 'Single service');
         await visitsApi.create({
           customerId,
           branchId,
@@ -105,6 +113,7 @@ export default function CustomersPage() {
             {
               serviceId,
               serviceVariantId: serviceVariantId || undefined,
+              staffId: staffId || undefined,
               quantity: 1,
             },
           ],
@@ -114,8 +123,8 @@ export default function CustomersPage() {
           branchId,
           amount: paid,
           currency: 'INR',
-          paymentMethod: paymentMethod as any,
-          notes: `Single service payment (${paymentMethod})`,
+          paymentMethod: pay.paymentMethod,
+          notes: pay.notes,
         });
       }
 
@@ -135,7 +144,8 @@ export default function CustomersPage() {
           price: Number(selectedPlan.price),
           currency: 'INR',
           recordPayment: true,
-          paymentMethod,
+          paymentMethod: paymentFields(paymentChoiceId).paymentMethod,
+          notes: paymentFields(paymentChoiceId, 'Membership').notes,
         });
       }
 
@@ -167,7 +177,8 @@ export default function CustomersPage() {
     setServiceVariantId('');
     setPlanId('');
     setAmount('');
-    setPaymentMethod('CASH');
+    setPaymentChoiceId('CASH');
+    setStaffId('');
     setFormError(null);
   };
 
@@ -175,10 +186,6 @@ export default function CustomersPage() {
     e.preventDefault();
     if (!firstName || !phone) {
       setFormError('First name and phone number are required.');
-      return;
-    }
-    if (!branchId) {
-      setFormError('Select a branch from the header before adding a customer.');
       return;
     }
     setFormError(null);
@@ -318,6 +325,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="py-4 pr-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <CustomerDeskActions customer={c} compact />
                         <Link href={`/customers/${c.id}`}>
                           <Button variant="outline" size="sm">
                             Profile <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
@@ -420,9 +428,9 @@ export default function CustomersPage() {
             placeholder="e.g. Prefers light pressure, allergic to lavender..."
           />
 
-          {!branchId && (
-            <p className="text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">
-              Select a branch in the header so this customer is saved to that location.
+          {isSuperAdmin && !branchId && (
+            <p className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3">
+              With one location, this guest is saved to the business. If you run more than one branch, choose it in the header first.
             </p>
           )}
 
@@ -490,6 +498,24 @@ export default function CustomersPage() {
                   ))}
                 </select>
               )}
+              <div className="space-y-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3">
+                <label className="block text-xs font-semibold text-slate-800">Therapist *</label>
+                <select
+                  value={staffId}
+                  onChange={(e) => setStaffId(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+                  required
+                >
+                  <option value="">Select therapist</option>
+                  {staffRes?.data?.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                      {member.position ? ` · ${member.position}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-600">This therapist is saved on the visit.</p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="Amount paid (₹) *"
@@ -501,16 +527,15 @@ export default function CustomersPage() {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-slate-700">Payment method *</label>
                   <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    value={paymentChoiceId}
+                    onChange={(e) => setPaymentChoiceId(e.target.value)}
                     className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
                   >
-                    <option value="CASH">Cash</option>
-                    <option value="CARD">Card</option>
-                    <option value="UPI">UPI</option>
-                    <option value="BANK_TRANSFER">Bank transfer</option>
-                    <option value="ONLINE">Online</option>
-                    <option value="OTHER">Other</option>
+                    {PAYMENT_CHOICES.map((choice) => (
+                      <option key={choice.id} value={choice.id}>
+                        {choice.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -544,16 +569,15 @@ export default function CustomersPage() {
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700">Payment method *</label>
                 <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  value={paymentChoiceId}
+                  onChange={(e) => setPaymentChoiceId(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
                 >
-                  <option value="CASH">Cash</option>
-                  <option value="CARD">Card</option>
-                  <option value="UPI">UPI</option>
-                  <option value="BANK_TRANSFER">Bank transfer</option>
-                  <option value="ONLINE">Online</option>
-                  <option value="OTHER">Other</option>
+                  {PAYMENT_CHOICES.map((choice) => (
+                    <option key={choice.id} value={choice.id}>
+                      {choice.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

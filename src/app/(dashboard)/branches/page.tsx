@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { branchesApi, Branch } from '@/lib/api/branches.api';
+import { usersApi } from '@/lib/api/users.api';
 import { useAuth, BranchView } from '@/lib/auth/auth-context';
 import { PageHeader } from '@/components/ui/page-header';
 import { SearchInput } from '@/components/ui/search-input';
@@ -52,6 +53,13 @@ export default function BranchesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedBranchForEdit, setSelectedBranchForEdit] = useState<Branch | null>(null);
   const [formError, setFormError] = useState('');
+  const [loginBranch, setLoginBranch] = useState<Branch | null>(null);
+  const [loginFirst, setLoginFirst] = useState('');
+  const [loginLast, setLoginLast] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginRole, setLoginRole] = useState('BRANCH_MANAGER');
+  const [loginMessage, setLoginMessage] = useState('');
 
   // Form State
   const [name, setName] = useState('');
@@ -104,6 +112,26 @@ export default function BranchesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
     },
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: () =>
+      usersApi.create({
+        firstName: loginFirst.trim(),
+        lastName: loginLast.trim(),
+        email: loginEmail.trim(),
+        password: loginPassword,
+        branchId: loginBranch!.id,
+        roleNames: [loginRole],
+      }),
+    onSuccess: () => {
+      setLoginMessage(`Login created for ${loginEmail.trim()}.`);
+      setLoginFirst('');
+      setLoginLast('');
+      setLoginEmail('');
+      setLoginPassword('');
+    },
+    onError: (err: Error) => setFormError(err.message || 'Could not create this login.'),
   });
 
   const resetForm = () => {
@@ -304,6 +332,17 @@ export default function BranchesPage() {
                   </Button>
                   <Button
                     size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setLoginBranch(b);
+                      setFormError('');
+                      setLoginMessage('');
+                    }}
+                  >
+                    Branch login
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="ghost"
                     onClick={() => {
                       setSelectedBranchForEdit(b);
@@ -491,6 +530,43 @@ export default function BranchesPage() {
                 {selectedBranchForEdit ? 'Save Changes' : 'Create Branch'}
               </Button>
             </div>
+          </form>
+        </Modal>
+      )}
+
+      {loginBranch && (
+        <Modal
+          isOpen={true}
+          onClose={() => setLoginBranch(null)}
+          title={`Login for ${loginBranch.name}`}
+          size="md"
+        >
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setFormError('');
+              setLoginMessage('');
+              loginMutation.mutate();
+            }}
+          >
+            {formError && <p className="text-sm text-rose-700">{formError}</p>}
+            {loginMessage && <p className="text-sm text-emerald-700">{loginMessage}</p>}
+            <Input label="First name" value={loginFirst} onChange={(e) => setLoginFirst(e.target.value)} required />
+            <Input label="Last name" value={loginLast} onChange={(e) => setLoginLast(e.target.value)} required />
+            <Input label="Email" type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+            <Input label="Password" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required minLength={6} />
+            <select
+              value={loginRole}
+              onChange={(e) => setLoginRole(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+            >
+              <option value="BRANCH_MANAGER">Branch manager</option>
+              <option value="RECEPTIONIST">Reception</option>
+            </select>
+            <Button type="submit" variant="gold" disabled={loginMutation.isPending}>
+              Create login
+            </Button>
           </form>
         </Modal>
       )}

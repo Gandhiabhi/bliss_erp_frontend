@@ -23,19 +23,28 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
   const branches = branchesRes?.data || [];
 
+  const toView = (match: (typeof branches)[number]): BranchView => ({
+    id: match.id,
+    branchCode: match.branchCode,
+    name: match.name,
+    currency: match.currency,
+    timezone: match.timezone,
+    country: match.country,
+    city: match.city,
+  });
+
   useEffect(() => {
-    if (!isSuperAdmin || !activeBranchId || currentBranch?.id === activeBranchId) return;
+    if (!isSuperAdmin) return;
+    if (branches.length === 1) {
+      const only = branches[0];
+      if (activeBranchId === only.id && currentBranch?.id === only.id) return;
+      setActiveBranchId(only.id, toView(only));
+      return;
+    }
+    if (!activeBranchId || currentBranch?.id === activeBranchId) return;
     const match = branches.find((b) => b.id === activeBranchId);
     if (!match) return;
-    setActiveBranchId(activeBranchId, {
-      id: match.id,
-      branchCode: match.branchCode,
-      name: match.name,
-      currency: match.currency,
-      timezone: match.timezone,
-      country: match.country,
-      city: match.city,
-    });
+    setActiveBranchId(activeBranchId, toView(match));
   }, [isSuperAdmin, activeBranchId, currentBranch?.id, branches, setActiveBranchId]);
 
   return (
@@ -50,7 +59,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </button>
 
         {/* Multi-Branch Selector / Indicator */}
-        {isSuperAdmin ? (
+        {isSuperAdmin && branches.length > 1 ? (
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-[#b5915f] hidden sm:block" />
             <select
@@ -62,17 +71,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
                   return;
                 }
                 const match = branches.find((b) => b.id === id);
-                const snapshot: BranchView | null = match
-                  ? {
-                      id: match.id,
-                      branchCode: match.branchCode,
-                      name: match.name,
-                      currency: match.currency,
-                      timezone: match.timezone,
-                      country: match.country,
-                      city: match.city,
-                    }
-                  : null;
+                const snapshot: BranchView | null = match ? toView(match) : null;
                 setActiveBranchId(id, snapshot);
               }}
               className="h-9 px-3 py-1 bg-white border border-[#e2d8ca] rounded-xl text-xs font-semibold text-[#2d231c] focus:outline-none focus:border-[#b5915f] cursor-pointer shadow-2xs"
@@ -90,10 +89,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
             <Building2 className="w-4 h-4 text-[#b5915f]" />
             <div className="text-left">
               <span className="text-xs font-bold text-[#2d231c] block leading-tight">
-                {user?.branch?.name || 'Assigned Spa Branch'}
+                {currentBranch?.name || user?.branch?.name || 'Your spa'}
               </span>
               <span className="text-[10px] text-[#705f52] block leading-tight font-medium">
-                {user?.branch?.city || 'India'} • ₹ INR
+                {currentBranch?.city || user?.branch?.city || 'Single location'} • ₹ INR
               </span>
             </div>
           </div>
