@@ -197,7 +197,7 @@ export function CustomerDeskActions({
         </form>
       </Modal>
 
-      <Modal isOpen={mode === 'service'} onClose={close} title="Add a service" size="md">
+      <Modal isOpen={mode === 'service'} onClose={close} title="Add a service" size="lg">
         <form
           className="space-y-3"
           onSubmit={(e) => {
@@ -232,22 +232,38 @@ export function CustomerDeskActions({
             ))}
           </select>
           {selectedService && selectedService.variants.length > 0 && (
-            <select
-              value={serviceVariantId}
-              onChange={(e) => {
-                setServiceVariantId(e.target.value);
-                const variant = selectedService.variants.find((item) => item.id === e.target.value);
-                if (variant) setAmount(String(variant.price));
-              }}
-              className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
-            >
-              <option value="">Standard duration</option>
-              {selectedService.variants.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.name} · {variant.duration} min · {formatCurrency(variant.price, 'INR')}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">Duration *</label>
+              <select
+                value={serviceVariantId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setServiceVariantId(nextId);
+                  if (!nextId) {
+                    setAmount(String(selectedService.defaultPrice));
+                    return;
+                  }
+                  const variant = selectedService.variants.find((item) => item.id === nextId);
+                  if (variant) setAmount(String(variant.price));
+                }}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+              >
+                <option value="">
+                  {selectedService.defaultDuration} min · {formatCurrency(selectedService.defaultPrice, 'INR')}
                 </option>
-              ))}
-            </select>
+                {selectedService.variants.map((variant) => {
+                  const minutes = `${variant.duration} min`;
+                  const named =
+                    variant.name && variant.name.trim().toLowerCase() !== minutes.toLowerCase();
+                  return (
+                    <option key={variant.id} value={variant.id}>
+                      {named ? `${variant.name} · ` : ''}
+                      {minutes} · {formatCurrency(variant.price, 'INR')}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           )}
           <div className="space-y-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3">
             <label className="block text-xs font-semibold text-slate-800">Therapist *</label>

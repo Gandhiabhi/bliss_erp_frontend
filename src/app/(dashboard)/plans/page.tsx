@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { plansApi, PlanTemplate } from '@/lib/api/plans.api';
 import { servicesApi, SpaService } from '@/lib/api/services.api';
@@ -28,6 +28,7 @@ import {
 
 interface ServiceItemInput {
   serviceId: string;
+  serviceVariantId: string;
   quantity: number;
 }
 
@@ -95,13 +96,25 @@ export default function PlansPage() {
     setFormError('');
   };
 
+  useEffect(() => {
+    if (!isCreateModalOpen || services.length > 0 || !servicesData?.data?.length) return;
+    setServices([
+      {
+        serviceId: servicesData.data[0].id,
+        serviceVariantId: '',
+        quantity: 1,
+      },
+    ]);
+  }, [isCreateModalOpen, services.length, servicesData]);
+
   const addServiceRow = () => {
     if (servicesData?.data && servicesData.data.length > 0) {
       setServices([
         ...services,
         {
           serviceId: servicesData.data[0].id,
-          quantity: 2,
+          serviceVariantId: '',
+          quantity: 1,
         },
       ]);
     }
@@ -110,6 +123,7 @@ export default function PlansPage() {
   const updateServiceRow = (index: number, field: keyof ServiceItemInput, value: any) => {
     const updated = [...services];
     updated[index] = { ...updated[index], [field]: value };
+    if (field === 'serviceId') updated[index].serviceVariantId = '';
     setServices(updated);
   };
 
@@ -141,6 +155,7 @@ export default function PlansPage() {
       currency: 'INR',
       services: services.map((s) => ({
         serviceId: s.serviceId,
+        serviceVariantId: s.serviceVariantId || undefined,
         quantity: Number(s.quantity),
       })),
     });
@@ -159,7 +174,6 @@ export default function PlansPage() {
           onClick={() => {
             resetForm();
             setIsCreateModalOpen(true);
-            setTimeout(() => addServiceRow(), 100);
           }}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -249,7 +263,12 @@ export default function PlansPage() {
                         key={idx}
                         className="flex justify-between items-center text-xs px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800"
                       >
-                        <span className="font-medium">{item.service?.name}</span>
+                        <span className="font-medium">
+                          {item.service?.name}
+                          {item.serviceVariant
+                            ? ` · ${item.serviceVariant.name} (${item.serviceVariant.duration} min)`
+                            : ''}
+                        </span>
                         <span className="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
                           {item.quantity} sessions
                         </span>
@@ -284,7 +303,7 @@ export default function PlansPage() {
           isOpen={true}
           onClose={() => setIsCreateModalOpen(false)}
           title="Create Package Template"
-          size="lg"
+          size="2xl"
         >
           <form onSubmit={handleCreateSubmit} className="space-y-4">
             {formError && (
@@ -294,8 +313,8 @@ export default function PlansPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Package Name *
                 </label>
@@ -377,43 +396,78 @@ export default function PlansPage() {
                 </Button>
               </div>
 
-              {services.map((row, idx) => (
-                <div key={idx} className="flex gap-3 items-center">
-                  <select
-                    value={row.serviceId}
-                    onChange={(e) => updateServiceRow(idx, 'serviceId', e.target.value)}
-                    className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-amber-500 shadow-2xs"
-                  >
-                    {servicesData?.data.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.code}) - {s.defaultDuration} mins
-                      </option>
-                    ))}
-                  </select>
+              {services.map((row, idx) => {
+                const selected = servicesData?.data?.find((service) => service.id === row.serviceId);
+                const variants = (selected?.variants || []).filter((variant) => variant.status !== 'INACTIVE');
+                return (
+                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_180px_88px_auto] gap-2 items-end rounded-xl bg-white border border-slate-200 p-3">
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-slate-600">Service</label>
+                      <select
+                        value={row.serviceId}
+                        onChange={(e) => updateServiceRow(idx, 'serviceId', e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-amber-500"
+                      >
+                        {servicesData?.data?.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div className="w-24">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={row.quantity}
-                      onChange={(e) =>
-                        updateServiceRow(idx, 'quantity', parseInt(e.target.value) || 1)
-                      }
-                      placeholder="Qty"
-                      required
-                    />
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-slate-600">Duration</label>
+                      <select
+                        value={row.serviceVariantId}
+                        onChange={(e) => updateServiceRow(idx, 'serviceVariantId', e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-amber-500"
+                        disabled={!selected}
+                      >
+                        <option value="">
+                          {selected
+                            ? `${selected.defaultDuration} min · ${formatCurrency(selected.defaultPrice, 'INR')}`
+                            : 'Standard'}
+                        </option>
+                        {variants.map((variant) => {
+                          const minutes = `${variant.duration} min`;
+                          const named =
+                            variant.name && variant.name.trim().toLowerCase() !== minutes.toLowerCase();
+                          return (
+                            <option key={variant.id} value={variant.id}>
+                              {named ? `${variant.name} · ` : ''}
+                              {minutes} · {formatCurrency(variant.price, 'INR')}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-slate-600">Sessions</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={row.quantity}
+                        onChange={(e) =>
+                          updateServiceRow(idx, 'quantity', parseInt(e.target.value) || 1)
+                        }
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeServiceRow(idx)}
+                      disabled={services.length === 1}
+                      className="h-10 px-2 text-slate-400 hover:text-rose-600 disabled:opacity-30 transition-colors"
+                      aria-label="Remove treatment"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeServiceRow(idx)}
-                    disabled={services.length === 1}
-                    className="p-2 text-slate-400 hover:text-rose-600 disabled:opacity-30 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">

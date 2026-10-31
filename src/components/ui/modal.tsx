@@ -39,11 +39,11 @@ export function Modal({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border border-slate-200 bg-white p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-2xl max-h-[90vh] overflow-y-auto text-slate-800',
+            'fixed left-1/2 top-1/2 z-50 flex w-[calc(100%-1.5rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[min(92vh,920px)]',
             maxW
           )}
         >
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-6 py-4">
             <div>
               <DialogPrimitive.Title className="text-lg font-bold text-slate-900">
                 {title}
@@ -58,7 +58,7 @@ export function Modal({
               <X className="w-5 h-5" />
             </DialogPrimitive.Close>
           </div>
-          <div>{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

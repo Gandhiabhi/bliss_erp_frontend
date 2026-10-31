@@ -360,7 +360,7 @@ export default function CustomersPage() {
         onClose={() => setIsAddModalOpen(false)}
         title="Register New Spa Guest"
         description="Save the guest, then give a single service with payment or a membership."
-        size="xl"
+        size="2xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
@@ -481,22 +481,37 @@ export default function CustomersPage() {
                 ))}
               </select>
               {selectedService && selectedService.variants.length > 0 && (
-                <select
-                  value={serviceVariantId}
-                  onChange={(e) => {
-                    setServiceVariantId(e.target.value);
-                    const variant = selectedService.variants.find((v) => v.id === e.target.value);
-                    if (variant) setAmount(String(variant.price));
-                  }}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
-                >
-                  <option value="">Standard duration</option>
-                  {selectedService.variants.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} · {v.duration} min · {formatCurrency(v.price, 'INR')}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">Duration *</label>
+                  <select
+                    value={serviceVariantId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setServiceVariantId(nextId);
+                      if (!nextId) {
+                        setAmount(String(selectedService.defaultPrice));
+                        return;
+                      }
+                      const variant = selectedService.variants.find((v) => v.id === nextId);
+                      if (variant) setAmount(String(variant.price));
+                    }}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+                  >
+                    <option value="">
+                      {selectedService.defaultDuration} min · {formatCurrency(selectedService.defaultPrice, 'INR')}
                     </option>
-                  ))}
-                </select>
+                    {selectedService.variants.map((v) => {
+                      const minutes = `${v.duration} min`;
+                      const named = v.name && v.name.trim().toLowerCase() !== minutes.toLowerCase();
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {named ? `${v.name} · ` : ''}
+                          {minutes} · {formatCurrency(v.price, 'INR')}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
               )}
               <div className="space-y-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3">
                 <label className="block text-xs font-semibold text-slate-800">Therapist *</label>
