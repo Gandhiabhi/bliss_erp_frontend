@@ -17,7 +17,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, validityLabel } from '@/lib/utils';
 import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import {
   CreditCard,
@@ -59,7 +59,9 @@ export default function MembershipsPage() {
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [planName, setPlanName] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLifetime, setIsLifetime] = useState(false);
   const [durationDays, setDurationDays] = useState(30);
+  const [catalogPrice, setCatalogPrice] = useState<number | null>(null);
   const [price, setPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
@@ -108,7 +110,9 @@ export default function MembershipsPage() {
       const template = plansData.data.find((p) => p.id === selectedPlanId);
       if (template) {
         setPlanName(template.name);
+        setIsLifetime(Boolean(template.isLifetime));
         setDurationDays(template.durationDays || 30);
+        setCatalogPrice(Number(template.price));
         setPrice(Number(template.price));
       }
     }
@@ -165,7 +169,9 @@ export default function MembershipsPage() {
     setSelectedPlanId('');
     setPlanName('');
     setStartDate(new Date().toISOString().split('T')[0]);
+    setIsLifetime(false);
     setDurationDays(30);
+    setCatalogPrice(null);
     setPrice(0);
     setDiscount(0);
     setTax(0);
@@ -204,7 +210,7 @@ export default function MembershipsPage() {
       branchId: currentBranch?.id,
       name: planName,
       startDate: new Date(startDate).toISOString(),
-      endDate: new Date(calculateEndDate(startDate, durationDays)).toISOString(),
+      isLifetime,
       price: Number(price),
       discount: Number(discount),
       tax: Number(tax),
@@ -213,6 +219,10 @@ export default function MembershipsPage() {
       notes: paymentFields(paymentMethod, 'Membership').notes,
       currency: 'INR',
     };
+
+    if (!isLifetime) {
+      payload.endDate = new Date(calculateEndDate(startDate, durationDays)).toISOString();
+    }
 
     if (planType === 'TEMPLATE') {
       payload.planTemplateId = selectedPlanId;
@@ -369,8 +379,9 @@ export default function MembershipsPage() {
                         <div className="flex items-center gap-1.5 text-xs text-slate-600">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
                           <span>
-                            {new Date(membership.startDate).toLocaleDateString()} &rarr;{' '}
-                            {new Date(membership.endDate).toLocaleDateString()}
+                            {membership.isLifetime
+                              ? 'Lifetime · ends when services are used'
+                              : `${new Date(membership.startDate).toLocaleDateString()} → ${membership.endDate ? new Date(membership.endDate).toLocaleDateString() : '—'}`}
                           </span>
                         </div>
                       </td>
@@ -466,7 +477,11 @@ export default function MembershipsPage() {
               <div>
                 <p className="text-xs text-slate-500 font-semibold uppercase">Expiry Date</p>
                 <p className="font-bold text-amber-800">
-                  {new Date(selectedMembership.endDate).toLocaleDateString()}
+                  {selectedMembership.isLifetime
+                    ? 'Lifetime'
+                    : selectedMembership.endDate
+                      ? new Date(selectedMembership.endDate).toLocaleDateString()
+                      : '—'}
                 </p>
               </div>
             </div>
@@ -586,6 +601,8 @@ export default function MembershipsPage() {
                 type="button"
                 onClick={() => {
                   setPlanType('CUSTOM');
+                  setCatalogPrice(null);
+                  setIsLifetime(true);
                   if (customServices.length === 0) addServiceRow();
                 }}
                 className={`py-2 rounded-lg text-sm font-bold transition-all ${
@@ -613,7 +630,7 @@ export default function MembershipsPage() {
                   <option value="">-- Choose a package template --</option>
                   {plansData?.data.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} - {formatCurrency(p.price, 'INR')} ({p.durationDays} Days,{' '}
+                      {p.name} - {formatCurrency(p.price, 'INR')} ({validityLabel(p)},{' '}
                       {p.services.length} services)
                     </option>
                   ))}
@@ -708,17 +725,38 @@ export default function MembershipsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Duration (Days) *
+                  Validity
                 </label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={durationDays}
-                  onChange={(e) => setDurationDays(parseInt(e.target.value) || 30)}
-                  required
-                />
+                {planType === 'CUSTOM' ? (
+                  <select
+                    value={isLifetime ? 'lifetime' : 'days'}
+                    onChange={(e) => setIsLifetime(e.target.value === 'lifetime')}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+                  >
+                    <option value="lifetime">Lifetime — ends when services are used</option>
+                    <option value="days">Fixed number of days</option>
+                  </select>
+                ) : (
+                  <p className="text-sm font-medium text-slate-800 h-10 flex items-center">
+                    {isLifetime ? 'Lifetime — ends when services are used' : `${durationDays} days`}
+                  </p>
+                )}
+                {!isLifetime && planType === 'CUSTOM' && (
+                  <div className="mt-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      label="Days"
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(parseInt(e.target.value) || 1)}
+                      required
+                    />
+                  </div>
+                )}
                 <span className="text-[11px] text-slate-500 mt-1 block">
-                  Expires on: {calculateEndDate(startDate, durationDays)}
+                  {isLifetime
+                    ? 'This guest keeps the plan until every included service is used.'
+                    : `Expires on: ${calculateEndDate(startDate, durationDays)}`}
                 </span>
               </div>
             </div>
@@ -727,7 +765,7 @@ export default function MembershipsPage() {
             <div className="grid grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Base Price (₹ INR)
+                  Price for this guest (₹)
                 </label>
                 <Input
                   type="number"
@@ -736,6 +774,11 @@ export default function MembershipsPage() {
                   onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
                   required
                 />
+                {catalogPrice !== null && (
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Package price stays {formatCurrency(catalogPrice, 'INR')}. Changing this amount applies only to this guest.
+                  </p>
+                )}
               </div>
 
               <div>

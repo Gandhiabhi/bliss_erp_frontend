@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, validityLabel } from '@/lib/utils';
 import {
   Package,
   Plus,
@@ -44,6 +44,7 @@ export default function PlansPage() {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
+  const [isLifetime, setIsLifetime] = useState(true);
   const [durationDays, setDurationDays] = useState(60);
   const [price, setPrice] = useState(350);
   const [services, setServices] = useState<ServiceItemInput[]>([]);
@@ -90,6 +91,7 @@ export default function PlansPage() {
     setName('');
     setCode('');
     setDescription('');
+    setIsLifetime(true);
     setDurationDays(60);
     setPrice(350);
     setServices([]);
@@ -145,12 +147,18 @@ export default function PlansPage() {
       return;
     }
 
+    if (!isLifetime && (!durationDays || durationDays < 1)) {
+      setFormError('Enter how many days this package stays valid, or choose lifetime.');
+      return;
+    }
+
     createPlanMutation.mutate({
       name,
       code: code.toUpperCase().trim(),
       branchId: currentBranch?.id,
       description: description || undefined,
-      durationDays: Number(durationDays),
+      isLifetime,
+      durationDays: isLifetime ? undefined : Number(durationDays),
       price: Number(price),
       currency: 'INR',
       services: services.map((s) => ({
@@ -233,7 +241,7 @@ export default function PlansPage() {
                     <h4 className="text-lg font-bold text-slate-900 mt-1.5">{plan.name}</h4>
                     <span className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                       <Calendar className="w-3 h-3 text-slate-400" />
-                      Valid for {plan.durationDays} days
+                      {validityLabel(plan)}
                     </span>
                   </div>
                   <StatusBadge status={plan.status} />
@@ -342,15 +350,32 @@ export default function PlansPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Validity Duration (Days) *
+                  Validity *
                 </label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={durationDays}
-                  onChange={(e) => setDurationDays(parseInt(e.target.value) || 30)}
-                  required
-                />
+                <select
+                  value={isLifetime ? 'lifetime' : 'days'}
+                  onChange={(e) => setIsLifetime(e.target.value === 'lifetime')}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+                >
+                  <option value="lifetime">Lifetime — ends when services are used</option>
+                  <option value="days">Fixed number of days</option>
+                </select>
+                {isLifetime ? (
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    The package stays active until every included service is used. The package price below stays the same for every guest.
+                  </p>
+                ) : (
+                  <div className="mt-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      label="Days"
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(parseInt(e.target.value) || 1)}
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

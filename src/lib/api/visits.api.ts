@@ -64,6 +64,7 @@ export const visitsApi = {
       membershipServiceId?: string;
       staffId?: string;
       quantity: number;
+      unitPrice?: number;
       notes?: string;
     }>;
   }) =>
