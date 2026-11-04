@@ -18,6 +18,17 @@ export function formatCurrency(amount: number | string | undefined | null, _curr
   }
 }
 
+export function validityLabel(item: {
+  isLifetime?: boolean;
+  durationDays?: number | null;
+  endDate?: string | Date | null;
+}): string {
+  if (item.isLifetime) return 'Lifetime · ends when all services are used';
+  if (item.durationDays) return `Valid for ${item.durationDays} days`;
+  if (item.endDate) return `Until ${formatDate(item.endDate)}`;
+  return 'Lifetime · ends when all services are used';
+}
+
 export function formatDate(dateStr: string | Date | undefined | null, options?: Intl.DateTimeFormatOptions): string {
   if (!dateStr) return '—';
   try {

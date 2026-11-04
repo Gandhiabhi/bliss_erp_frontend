@@ -16,6 +16,7 @@ export interface PlanTemplate {
   branchId?: string | null;
   description?: string;
   durationDays: number;
+  isLifetime?: boolean;
   price: number;
   currency: string;
   status: string;

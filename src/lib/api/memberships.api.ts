@@ -23,7 +23,8 @@ export interface Membership {
   name: string;
   description?: string;
   startDate: string;
-  endDate: string;
+  endDate?: string | null;
+  isLifetime?: boolean;
   price: number;
   currency: string;
   discount: number;

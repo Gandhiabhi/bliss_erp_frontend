@@ -161,7 +161,9 @@ export default function CustomerProfilePage() {
               <div>
                 <p className="text-sm font-bold text-amber-800">{activeMemberships[0].name}</p>
                 <p className="text-[11px] text-slate-500">
-                  Valid until {formatDate(activeMemberships[0].endDate)}
+                  {activeMemberships[0].isLifetime
+                    ? 'Lifetime · ends when all services are used'
+                    : `Valid until ${formatDate(activeMemberships[0].endDate)}`}
                 </p>
               </div>
             ) : (
@@ -324,7 +326,10 @@ export default function CustomerProfilePage() {
                           <StatusBadge status={m.status} size="sm" />
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Code: <span className="font-mono text-amber-800 font-semibold">{m.membershipCode}</span> • Valid: {formatDate(m.startDate)} - {formatDate(m.endDate)}
+                          Code: <span className="font-mono text-amber-800 font-semibold">{m.membershipCode}</span> •{' '}
+                          {m.isLifetime
+                            ? 'Lifetime · ends when all services are used'
+                            : `Valid: ${formatDate(m.startDate)} - ${formatDate(m.endDate)}`}
                         </p>
                       </div>
                       <div className="text-right">

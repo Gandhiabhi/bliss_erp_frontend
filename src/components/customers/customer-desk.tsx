@@ -13,7 +13,7 @@ import { visitsApi } from '@/lib/api/visits.api';
 import { paymentsApi } from '@/lib/api/payments.api';
 import { membershipsApi } from '@/lib/api/memberships.api';
 import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, validityLabel } from '@/lib/utils';
 import { Pencil, Sparkles, CreditCard } from 'lucide-react';
 
 export function CustomerDeskActions({
@@ -37,6 +37,8 @@ export function CustomerDeskActions({
   const [serviceVariantId, setServiceVariantId] = useState('');
   const [staffId, setStaffId] = useState('');
   const [amount, setAmount] = useState('');
+  const [menuPrice, setMenuPrice] = useState<number | null>(null);
+  const [planPrice, setPlanPrice] = useState('');
   const [paymentChoiceId, setPaymentChoiceId] = useState('CASH');
   const [planId, setPlanId] = useState('');
 
@@ -92,6 +94,7 @@ export function CustomerDeskActions({
   const serviceMutation = useMutation({
     mutationFn: async () => {
       const pay = paymentFields(paymentChoiceId, 'Return visit');
+      const agreedPrice = Number(amount);
       await visitsApi.create({
         customerId: customer.id,
         branchId: customer.branchId,
@@ -102,17 +105,20 @@ export function CustomerDeskActions({
             serviceVariantId: serviceVariantId || undefined,
             staffId: staffId || undefined,
             quantity: 1,
+            unitPrice: agreedPrice,
           },
         ],
       });
-      await paymentsApi.createPayment({
-        customerId: customer.id,
-        branchId: customer.branchId,
-        amount: Number(amount),
-        currency: 'INR',
-        paymentMethod: pay.paymentMethod,
-        notes: pay.notes,
-      });
+      if (agreedPrice > 0) {
+        await paymentsApi.createPayment({
+          customerId: customer.id,
+          branchId: customer.branchId,
+          amount: agreedPrice,
+          currency: 'INR',
+          paymentMethod: pay.paymentMethod,
+          notes: pay.notes,
+        });
+      }
     },
     onSuccess: () => {
       refresh();
@@ -124,7 +130,10 @@ export function CustomerDeskActions({
   const membershipMutation = useMutation({
     mutationFn: () => {
       if (!selectedPlan) throw new Error('Choose a membership.');
+      const agreed = Number(planPrice);
+      if (Number.isNaN(agreed) || agreed < 0) throw new Error('Enter the price for this guest.');
       const start = new Date();
+      const lifetime = Boolean(selectedPlan.isLifetime);
       const end = new Date(start);
       end.setDate(end.getDate() + Number(selectedPlan.durationDays || 30));
       const pay = paymentFields(paymentChoiceId, 'Membership');
@@ -133,11 +142,12 @@ export function CustomerDeskActions({
         branchId: customer.branchId,
         planTemplateId: selectedPlan.id,
         name: selectedPlan.name,
+        isLifetime: lifetime,
         startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        price: Number(selectedPlan.price),
+        endDate: lifetime ? undefined : end.toISOString(),
+        price: agreed,
         currency: 'INR',
-        recordPayment: true,
+        recordPayment: agreed > 0,
         paymentMethod: pay.paymentMethod,
         notes: pay.notes,
       });
@@ -202,8 +212,8 @@ export function CustomerDeskActions({
           className="space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!serviceId || Number(amount) <= 0) {
-              setError('Choose a service and enter the amount paid.');
+            if (!serviceId || amount === '' || Number(amount) < 0) {
+              setError('Choose a service and enter the price for this guest.');
               return;
             }
             if (!staffId) {
@@ -220,7 +230,10 @@ export function CustomerDeskActions({
               setServiceId(e.target.value);
               setServiceVariantId('');
               const service = servicesRes?.data?.find((item) => item.id === e.target.value);
-              if (service) setAmount(String(service.defaultPrice));
+              if (service) {
+                setMenuPrice(Number(service.defaultPrice));
+                setAmount(String(service.defaultPrice));
+              }
             }}
             className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
           >
@@ -240,11 +253,15 @@ export function CustomerDeskActions({
                   const nextId = e.target.value;
                   setServiceVariantId(nextId);
                   if (!nextId) {
+                    setMenuPrice(Number(selectedService.defaultPrice));
                     setAmount(String(selectedService.defaultPrice));
                     return;
                   }
                   const variant = selectedService.variants.find((item) => item.id === nextId);
-                  if (variant) setAmount(String(variant.price));
+                  if (variant) {
+                    setMenuPrice(Number(variant.price));
+                    setAmount(String(variant.price));
+                  }
                 }}
                 className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
               >
@@ -283,7 +300,18 @@ export function CustomerDeskActions({
             </select>
             <p className="text-[11px] text-slate-600">Saved with this visit so you can see who gave the service.</p>
           </div>
-          <Input label="Amount paid (₹)" type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Input
+            label="Price for this guest (₹)"
+            type="number"
+            min="0"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          {menuPrice !== null && (
+            <p className="text-[11px] text-slate-500">
+              Menu price stays {formatCurrency(menuPrice, 'INR')}. This price is only for this guest.
+            </p>
+          )}
           <select
             value={paymentChoiceId}
             onChange={(e) => setPaymentChoiceId(e.target.value)}
@@ -312,20 +340,37 @@ export function CustomerDeskActions({
           {error && <p className="text-sm text-rose-700">{error}</p>}
           <select
             value={planId}
-            onChange={(e) => setPlanId(e.target.value)}
+            onChange={(e) => {
+              const nextId = e.target.value;
+              setPlanId(nextId);
+              const plan = plansRes?.data?.find((item) => item.id === nextId);
+              setPlanPrice(plan ? String(plan.price) : '');
+            }}
             className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
           >
             <option value="">Choose a membership</option>
             {plansRes?.data?.map((plan) => (
               <option key={plan.id} value={plan.id}>
-                {plan.name} · {plan.durationDays} days · {formatCurrency(Number(plan.price), 'INR')}
+                {plan.name} · {validityLabel(plan)} · {formatCurrency(Number(plan.price), 'INR')}
               </option>
             ))}
           </select>
           {selectedPlan && (
-            <p className="text-xs text-slate-600">
-              {selectedPlan.name} · {formatCurrency(Number(selectedPlan.price), 'INR')} · {selectedPlan.durationDays} days
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-600">
+                {selectedPlan.name} · {validityLabel(selectedPlan)} · package price {formatCurrency(Number(selectedPlan.price), 'INR')}
+              </p>
+              <Input
+                label="Price for this guest (₹)"
+                type="number"
+                min="0"
+                value={planPrice}
+                onChange={(e) => setPlanPrice(e.target.value)}
+              />
+              <p className="text-[11px] text-slate-500">
+                The package keeps its price of {formatCurrency(Number(selectedPlan.price), 'INR')} for the next guest.
+              </p>
+            </div>
           )}
           <select
             value={paymentChoiceId}

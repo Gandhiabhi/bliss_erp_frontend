@@ -12,7 +12,8 @@ export interface ServiceEntitlement {
   remaining: number;
   percentageUsed: number;
   isExpired: boolean;
-  expiresAt: string;
+  isLifetime?: boolean;
+  expiresAt: string | null;
 }
 
 export interface Customer {

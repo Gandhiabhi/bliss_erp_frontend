@@ -14,7 +14,8 @@ import { customersApi, Customer, ServiceEntitlement } from '@/lib/api/customers.
 import { staffApi } from '@/lib/api/staff.api';
 import { visitsApi } from '@/lib/api/visits.api';
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatDate } from '@/lib/utils';
+import { CustomerDeskActions } from '@/components/customers/customer-desk';
+import { RegisterGuestModal } from '@/components/customers/register-guest-modal';
 import {
   Sparkles,
   Search,
@@ -25,7 +26,16 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
+  UserPlus,
 } from 'lucide-react';
+
+function phoneFromSearch(query: string): string | null {
+  const trimmed = query.trim();
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < 6) return null;
+  if (trimmed.replace(/[\d\s+\-()]/g, '').length > 0) return null;
+  return trimmed;
+}
 
 export default function FastCheckInPage() {
   const { currentBranch } = useAuth();
@@ -38,6 +48,7 @@ export default function FastCheckInPage() {
   const [visitNotes, setVisitNotes] = useState<string>('');
   const [checkInSuccess, setCheckInSuccess] = useState<any | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   // Search customers query
   const { data: searchRes, isFetching: isSearching } = useQuery({
@@ -52,6 +63,8 @@ export default function FastCheckInPage() {
   });
 
   const searchResults = searchRes?.data || [];
+  const typedPhone = phoneFromSearch(searchQuery);
+  const showAddCustomer = Boolean(typedPhone) && !isSearching && searchQuery.length > 0 && searchResults.length === 0;
 
   // Selected customer full profile query
   const { data: customerRes, isLoading: isLoadingCustomer } = useQuery({
@@ -193,6 +206,19 @@ export default function FastCheckInPage() {
                     );
                   })}
                 </div>
+              ) : showAddCustomer ? (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2">
+                  <p className="text-xs text-slate-600">No guest for {typedPhone}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsAddOpen(true)}
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Add customer
+                  </Button>
+                </div>
               ) : searchQuery ? (
                 <p className="text-xs text-slate-500 text-center py-4">No guests found for &quot;{searchQuery}&quot;</p>
               ) : (
@@ -231,11 +257,14 @@ export default function FastCheckInPage() {
                         ID: <span className="font-mono text-amber-700 font-semibold">{customer?.customerCode}</span> • Phone: {customer?.phone}
                       </p>
                     </div>
-                    <Link href={`/customers/${customer?.id}`}>
-                      <Button variant="outline" size="sm">
-                        View Full History <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      {customer && <CustomerDeskActions customer={customer} compact />}
+                      <Link href={`/customers/${customer?.id}`}>
+                        <Button variant="outline" size="sm">
+                          Profile <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -383,6 +412,18 @@ export default function FastCheckInPage() {
           )}
         </div>
       </div>
+
+      <RegisterGuestModal
+        isOpen={isAddOpen}
+        initialPhone={typedPhone || ''}
+        onClose={() => setIsAddOpen(false)}
+        onCreated={(created) => {
+          setSelectedCustomerId(created.id);
+          setSearchQuery(created.phone || typedPhone || '');
+          setCheckInSuccess(null);
+          setErrorMessage(null);
+        }}
+      />
     </div>
   );
 }
