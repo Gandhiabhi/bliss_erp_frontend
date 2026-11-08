@@ -40,7 +40,6 @@ export default function ServicesPage() {
 
   // Create Service Form State
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [defaultDuration, setDefaultDuration] = useState(60);
@@ -147,7 +146,6 @@ export default function ServicesPage() {
 
   const resetCreateForm = () => {
     setName('');
-    setCode('');
     setCategoryId('');
     setDescription('');
     setDefaultDuration(60);
@@ -161,14 +159,13 @@ export default function ServicesPage() {
     e.preventDefault();
     setFormError('');
 
-    if (!name || !code) {
-      setFormError('Please enter service name and code.');
+    if (!name.trim()) {
+      setFormError('Please enter the treatment name.');
       return;
     }
 
     createServiceMutation.mutate({
-      name,
-      code: code.toUpperCase().trim(),
+      name: name.trim(),
       categoryId: categoryId || undefined,
       description: description || undefined,
       defaultDuration: Number(defaultDuration),
@@ -481,30 +478,16 @@ export default function ServicesPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Treatment Name *
-                </label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Royal Balinese Massage"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Code *
-                </label>
-                <Input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="e.g. RBM-01"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Treatment Name *
+              </label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Royal Balinese Massage"
+                required
+              />
             </div>
 
             <div>
