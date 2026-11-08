@@ -106,6 +106,21 @@ export default function CustomerProfilePage() {
 
   const activeMemberships = customer.memberships?.filter((m: any) => m.status === 'ACTIVE') || [];
   const entitlements = customer.serviceEntitlements || [];
+  const serviceLines = (customer.visits || []).flatMap((visit: any) =>
+    (visit.visitServices || []).map((line: any) => ({
+      id: line.id,
+      visitCode: visit.visitCode,
+      date: visit.visitDate,
+      name: line.serviceNameSnapshot || line.service?.name || 'Service',
+      variant: line.variantNameSnapshot,
+      therapist: line.staff?.name,
+      quantity: Number(line.quantity || 1),
+      fromPlan: Boolean(line.membershipServiceId),
+      planName: visit.membership?.name,
+      amount: Number(line.unitPriceSnapshot || 0) * Number(line.quantity || 1),
+      currency: line.currencySnapshot || 'INR',
+    })),
+  );
 
   return (
     <div className="space-y-6">
@@ -295,6 +310,51 @@ export default function CustomerProfilePage() {
               )}
             </CardContent>
           </Card>
+
+          <Card className="bg-white border-slate-200/90 shadow-xs">
+            <CardHeader className="border-b border-slate-100">
+              <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-600" />
+                Service history
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {serviceLines.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">No services recorded for this guest yet.</p>
+              ) : (
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase bg-slate-50/80">
+                      <th className="py-3.5 pl-6">Date</th>
+                      <th className="py-3.5">Service</th>
+                      <th className="py-3.5">Therapist</th>
+                      <th className="py-3.5">How it was taken</th>
+                      <th className="py-3.5 pr-6 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {serviceLines.map((line) => (
+                      <tr key={line.id} className="hover:bg-amber-50/20">
+                        <td className="py-3.5 pl-6 text-slate-600 whitespace-nowrap">{formatDateTime(line.date)}</td>
+                        <td className="py-3.5 text-slate-900 font-medium">
+                          {line.name}
+                          {line.variant ? <span className="text-slate-500"> ({line.variant})</span> : null}
+                          {line.quantity > 1 ? <span className="text-slate-500"> × {line.quantity}</span> : null}
+                        </td>
+                        <td className="py-3.5 text-slate-600">{line.therapist || '—'}</td>
+                        <td className="py-3.5 text-slate-600">
+                          {line.fromPlan ? `From plan · ${line.planName || 'membership'}` : 'Paid service'}
+                        </td>
+                        <td className="py-3.5 pr-6 text-right font-bold text-slate-900">
+                          {line.fromPlan ? 'Included' : formatCurrency(line.amount, line.currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -381,6 +441,7 @@ export default function CustomerProfilePage() {
                     <th className="py-3.5">Date & Time</th>
                     <th className="py-3.5">Treatments Received</th>
                     <th className="py-3.5">Therapist</th>
+                    <th className="py-3.5 text-right">Amount</th>
                     <th className="py-3.5 text-center">Status</th>
                   </tr>
                 </thead>
@@ -400,11 +461,28 @@ export default function CustomerProfilePage() {
                             {vs.variantNameSnapshot && (
                               <span className="text-slate-500 text-[11px]"> ({vs.variantNameSnapshot})</span>
                             )}
+                            {vs.membershipServiceId && (
+                              <span className="text-slate-500 text-[11px]"> · from plan</span>
+                            )}
                           </div>
                         ))}
                       </td>
                       <td className="py-3.5 text-slate-600">
                         {v.visitServices?.[0]?.staff?.name || '—'}
+                      </td>
+                      <td className="py-3.5 text-right font-bold text-slate-900">
+                        {v.visitServices?.every((vs: any) => vs.membershipServiceId)
+                          ? 'Included'
+                          : formatCurrency(
+                              (v.visitServices || [])
+                                .filter((vs: any) => !vs.membershipServiceId)
+                                .reduce(
+                                  (sum: number, vs: any) =>
+                                    sum + Number(vs.unitPriceSnapshot || 0) * Number(vs.quantity || 1),
+                                  0,
+                                ),
+                              v.visitServices?.[0]?.currencySnapshot || 'INR',
+                            )}
                       </td>
                       <td className="py-3.5 text-center">
                         <StatusBadge status={v.status} size="sm" />
@@ -494,6 +572,51 @@ export default function CustomerProfilePage() {
                         </td>
                         <td className="py-3.5 text-center">
                           <StatusBadge status={inv.status} size="sm" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-slate-200/90 shadow-xs">
+            <CardHeader className="border-b border-slate-100">
+              <CardTitle className="text-base font-bold text-slate-800">Payments</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {customer.payments?.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">No payments recorded.</p>
+              ) : (
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase bg-slate-50/80">
+                      <th className="py-3.5 pl-6">Date</th>
+                      <th className="py-3.5">For</th>
+                      <th className="py-3.5">Method</th>
+                      <th className="py-3.5 pr-6 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {customer.payments?.map((payment: any) => (
+                      <tr key={payment.id} className="hover:bg-amber-50/20">
+                        <td className="py-3.5 pl-6 text-slate-600 whitespace-nowrap">
+                          {formatDateTime(payment.paymentDate)}
+                        </td>
+                        <td className="py-3.5 text-slate-800 font-medium">
+                          {payment.membership?.name
+                            ? `Plan · ${payment.membership.name}`
+                            : payment.invoice?.invoiceNumber
+                              ? `Invoice ${payment.invoice.invoiceNumber}`
+                              : 'Service'}
+                          {payment.notes ? (
+                            <span className="block text-[11px] font-normal text-slate-500">{payment.notes}</span>
+                          ) : null}
+                        </td>
+                        <td className="py-3.5 text-slate-600">{payment.paymentMethod || '—'}</td>
+                        <td className="py-3.5 pr-6 text-right font-bold text-slate-900">
+                          {formatCurrency(payment.amount, payment.currency)}
                         </td>
                       </tr>
                     ))}

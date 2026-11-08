@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { membershipsApi, Membership } from '@/lib/api/memberships.api';
 import { plansApi, PlanTemplate } from '@/lib/api/plans.api';
@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency, validityLabel } from '@/lib/utils';
+import { GuestPlanServicesEditor, rowsFromPlan } from '@/components/customers/guest-plan-services';
 import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import {
   CreditCard,
@@ -69,6 +70,7 @@ export default function MembershipsPage() {
   const [paymentMethod, setPaymentMethod] = useState('CREDIT_CARD');
   const [customServices, setCustomServices] = useState<CustomServiceRow[]>([]);
   const [formError, setFormError] = useState('');
+  const appliedPlanRef = useRef('');
 
   // Fetch memberships
   const { data, isLoading, error } = useQuery({
@@ -101,7 +103,7 @@ export default function MembershipsPage() {
   const { data: servicesData } = useQuery({
     queryKey: ['services-selector', currentBranch?.id],
     queryFn: () => servicesApi.getAll({ branchId: currentBranch?.id }),
-    enabled: isEnrolModalOpen && planType === 'CUSTOM',
+    enabled: isEnrolModalOpen,
   });
 
   // Handle plan template selection
@@ -112,8 +114,12 @@ export default function MembershipsPage() {
         setPlanName(template.name);
         setIsLifetime(Boolean(template.isLifetime));
         setDurationDays(template.durationDays || 30);
-        setCatalogPrice(Number(template.price));
-        setPrice(Number(template.price));
+        if (appliedPlanRef.current !== selectedPlanId) {
+          appliedPlanRef.current = selectedPlanId;
+          setCatalogPrice(Number(template.price));
+          setPrice(Number(template.price));
+          setCustomServices(rowsFromPlan(template.services));
+        }
       }
     }
   }, [selectedPlanId, planType, plansData]);
@@ -178,6 +184,7 @@ export default function MembershipsPage() {
     setPaymentStatus('PAID');
     setCustomServices([]);
     setFormError('');
+    appliedPlanRef.current = '';
   };
 
   const handleEnrolSubmit = (e: React.FormEvent) => {
@@ -191,6 +198,11 @@ export default function MembershipsPage() {
 
     if (planType === 'TEMPLATE' && !selectedPlanId) {
       setFormError('Please select a plan package.');
+      return;
+    }
+
+    if (planType === 'TEMPLATE' && customServices.length === 0) {
+      setFormError('Add at least one service for this guest.');
       return;
     }
 
@@ -227,6 +239,11 @@ export default function MembershipsPage() {
     if (planType === 'TEMPLATE') {
       payload.planTemplateId = selectedPlanId;
       payload.isCustomPlan = false;
+      payload.services = customServices.map((cs) => ({
+        serviceId: cs.serviceId,
+        serviceVariantId: cs.serviceVariantId || undefined,
+        allocatedQuantity: Number(cs.allocatedQuantity),
+      }));
     } else {
       payload.isCustomPlan = true;
       payload.services = customServices.map((cs) => ({
@@ -635,6 +652,15 @@ export default function MembershipsPage() {
                     </option>
                   ))}
                 </select>
+                {selectedPlanId && (
+                  <div className="mt-3">
+                    <GuestPlanServicesEditor
+                      catalog={servicesData?.data || []}
+                      rows={customServices}
+                      onChange={setCustomServices}
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <div>

@@ -14,6 +14,7 @@ import { paymentsApi } from '@/lib/api/payments.api';
 import { membershipsApi } from '@/lib/api/memberships.api';
 import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import { formatCurrency, validityLabel } from '@/lib/utils';
+import { GuestPlanServicesEditor, GuestServiceRow, rowsFromPlan } from '@/components/customers/guest-plan-services';
 import { Pencil, Sparkles, CreditCard } from 'lucide-react';
 
 export function CustomerDeskActions({
@@ -39,13 +40,14 @@ export function CustomerDeskActions({
   const [amount, setAmount] = useState('');
   const [menuPrice, setMenuPrice] = useState<number | null>(null);
   const [planPrice, setPlanPrice] = useState('');
+  const [planServices, setPlanServices] = useState<GuestServiceRow[]>([]);
   const [paymentChoiceId, setPaymentChoiceId] = useState('CASH');
   const [planId, setPlanId] = useState('');
 
   const { data: servicesRes } = useQuery({
     queryKey: ['desk-services', customer.branchId],
     queryFn: () => servicesApi.getAll({ branchId: customer.branchId }),
-    enabled: mode === 'service',
+    enabled: mode === 'service' || mode === 'membership',
   });
   const { data: staffRes } = useQuery({
     queryKey: ['desk-staff', customer.branchId],
@@ -130,6 +132,7 @@ export function CustomerDeskActions({
   const membershipMutation = useMutation({
     mutationFn: () => {
       if (!selectedPlan) throw new Error('Choose a membership.');
+      if (planServices.length === 0) throw new Error('Add at least one service for this guest.');
       const agreed = Number(planPrice);
       if (Number.isNaN(agreed) || agreed < 0) throw new Error('Enter the price for this guest.');
       const start = new Date();
@@ -150,6 +153,11 @@ export function CustomerDeskActions({
         recordPayment: agreed > 0,
         paymentMethod: pay.paymentMethod,
         notes: pay.notes,
+        services: planServices.map((row) => ({
+          serviceId: row.serviceId,
+          serviceVariantId: row.serviceVariantId,
+          allocatedQuantity: Number(row.allocatedQuantity),
+        })),
       });
     },
     onSuccess: () => {
@@ -329,7 +337,7 @@ export function CustomerDeskActions({
         </form>
       </Modal>
 
-      <Modal isOpen={mode === 'membership'} onClose={close} title="Assign a membership" size="md">
+      <Modal isOpen={mode === 'membership'} onClose={close} title="Assign a membership" size="lg">
         <form
           className="space-y-3"
           onSubmit={(e) => {
@@ -345,6 +353,7 @@ export function CustomerDeskActions({
               setPlanId(nextId);
               const plan = plansRes?.data?.find((item) => item.id === nextId);
               setPlanPrice(plan ? String(plan.price) : '');
+              setPlanServices(plan ? rowsFromPlan(plan.services) : []);
             }}
             className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
           >
@@ -360,6 +369,11 @@ export function CustomerDeskActions({
               <p className="text-xs text-slate-600">
                 {selectedPlan.name} · {validityLabel(selectedPlan)} · package price {formatCurrency(Number(selectedPlan.price), 'INR')}
               </p>
+              <GuestPlanServicesEditor
+                catalog={servicesRes?.data || []}
+                rows={planServices}
+                onChange={setPlanServices}
+              />
               <Input
                 label="Price for this guest (₹)"
                 type="number"

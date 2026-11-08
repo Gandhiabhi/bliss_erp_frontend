@@ -15,6 +15,7 @@ import { staffApi } from '@/lib/api/staff.api';
 import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCurrency, validityLabel } from '@/lib/utils';
+import { GuestPlanServicesEditor, GuestServiceRow, rowsFromPlan } from '@/components/customers/guest-plan-services';
 
 export function RegisterGuestModal({
   isOpen,
@@ -42,6 +43,7 @@ export function RegisterGuestModal({
   const [serviceVariantId, setServiceVariantId] = useState('');
   const [planId, setPlanId] = useState('');
   const [planPrice, setPlanPrice] = useState('');
+  const [planServices, setPlanServices] = useState<GuestServiceRow[]>([]);
   const [menuPrice, setMenuPrice] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
   const [paymentChoiceId, setPaymentChoiceId] = useState('CASH');
@@ -61,6 +63,7 @@ export function RegisterGuestModal({
     setServiceVariantId('');
     setPlanId('');
     setPlanPrice('');
+    setPlanServices([]);
     setMenuPrice(null);
     setAmount('');
     setPaymentChoiceId('CASH');
@@ -135,6 +138,7 @@ export function RegisterGuestModal({
 
       if (offerType === 'membership') {
         if (!selectedPlan) throw new Error('Choose a membership plan.');
+        if (planServices.length === 0) throw new Error('Add at least one service for this guest.');
         const agreed = Number(planPrice);
         if (planPrice === '' || Number.isNaN(agreed) || agreed < 0) {
           throw new Error('Enter the price for this guest.');
@@ -157,6 +161,11 @@ export function RegisterGuestModal({
           recordPayment: agreed > 0,
           paymentMethod: paymentFields(paymentChoiceId).paymentMethod,
           notes: paymentFields(paymentChoiceId, 'Membership').notes,
+          services: planServices.map((row) => ({
+            serviceId: row.serviceId,
+            serviceVariantId: row.serviceVariantId,
+            allocatedQuantity: Number(row.allocatedQuantity),
+          })),
         });
       }
 
@@ -414,6 +423,7 @@ export function RegisterGuestModal({
                 setPlanId(nextId);
                 const plan = plansRes?.data?.find((item) => item.id === nextId);
                 setPlanPrice(plan ? String(plan.price) : '');
+                setPlanServices(plan ? rowsFromPlan(plan.services) : []);
               }}
               className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-sm"
             >
@@ -427,12 +437,13 @@ export function RegisterGuestModal({
             {selectedPlan && (
               <div className="space-y-2">
                 <p className="text-xs text-slate-600">
-                  Includes{' '}
-                  {selectedPlan.services
-                    .map((s) => `${s.quantity} × ${s.service?.name || 'service'}`)
-                    .join(', ') || 'the services on this plan'}
-                  . {validityLabel(selectedPlan)}.
+                  {selectedPlan.name} · {validityLabel(selectedPlan)} · package price {formatCurrency(Number(selectedPlan.price), 'INR')}
                 </p>
+                <GuestPlanServicesEditor
+                  catalog={servicesRes?.data || []}
+                  rows={planServices}
+                  onChange={setPlanServices}
+                />
                 <Input
                   label="Price for this guest (₹) *"
                   type="number"
