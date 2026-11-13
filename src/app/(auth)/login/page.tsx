@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Sparkles, Shield, Building2, User, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
@@ -26,12 +26,6 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err?.message || 'Authentication failed. Please check your credentials.');
     }
-  };
-
-  const fillCredentials = (em = 'bhairaram@gmail.com', pw = 'Bhairaram@123') => {
-    setEmail(em);
-    setPassword(pw);
-    setError(null);
   };
 
   return (
@@ -65,7 +59,7 @@ export default function LoginPage() {
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-xl font-serif-luxury font-bold text-[#2d231c]">Sign in to your account</CardTitle>
           <CardDescription className="text-[#705f52] text-xs">
-            Enter your Super Admin credentials or click Fast Fill below.
+            Enter your email and password.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -81,7 +75,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="bhairaram@gmail.com"
+              placeholder="you@spa.com"
               required
             />
             <Input
@@ -103,34 +97,6 @@ export default function LoginPage() {
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </form>
-
-          {/* Super Admin Fast-Fill Section */}
-          <div className="mt-6 pt-5 border-t border-[#f0e8dc]">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#705f52] mb-2.5 text-center">
-              Super Administrator Access
-            </p>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillCredentials('bhairaram@gmail.com', 'Bhairaram@123')}
-                className="flex items-center justify-between p-3 rounded-xl bg-[#fcfbf8] border border-[#e8e0d5] hover:border-[#b5915f] hover:bg-[#fbf7f0] text-left transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Shield className="w-4 h-4 text-[#b5915f] shrink-0" />
-                  <div>
-                    <span className="font-bold text-[#2d231c] block">Super Admin (bhairaram@gmail.com)</span>
-                    <span className="text-[10px] text-[#705f52]">Full Global Network Access</span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold text-[#b5915f] bg-[#f7f0e4] px-2 py-0.5 rounded-md">
-                  Click to fill
-                </span>
-              </button>
-            </div>
-            <p className="text-[10px] text-[#705f52] mt-3 text-center">
-              Super Admin: <code className="text-[#3e2c1e] font-bold font-mono">bhairaram@gmail.com</code> | Pass: <code className="text-[#3e2c1e] font-bold font-mono">Bhairaram@123</code>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
