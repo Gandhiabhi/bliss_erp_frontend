@@ -13,7 +13,8 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
-  const { user, isSuperAdmin, activeBranchId, currentBranch, setActiveBranchId, logout } = useAuth();
+  const { user, isSuperAdmin, activeBranchId, currentBranch, setActiveBranchId, logout, hasPermission } = useAuth();
+  const canCheckIn = hasPermission('visit.create') || hasPermission('customer.read');
 
   const { data: branchesRes } = useQuery({
     queryKey: ['branches-list'],
@@ -101,12 +102,14 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
       {/* Right side: Fast check-in shortcut + User info + Logout */}
       <div className="flex items-center gap-3">
-        <Link href="/check-in" className="hidden sm:inline-flex">
-          <Button variant="gold" size="sm" className="shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 mr-1" />
-            Fast Check-in
-          </Button>
-        </Link>
+        {canCheckIn && (
+          <Link href="/check-in" className="hidden sm:inline-flex">
+            <Button variant="gold" size="sm" className="shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 mr-1" />
+              Fast Check-in
+            </Button>
+          </Link>
+        )}
 
         {/* User profile capsule */}
         <div className="flex items-center gap-3 pl-3 border-l border-[#e8e0d5]">

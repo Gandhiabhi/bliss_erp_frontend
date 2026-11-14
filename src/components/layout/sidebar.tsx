@@ -19,6 +19,7 @@ import {
   BarChart3,
   Building2,
   ShieldAlert,
+  Shield,
   Settings,
   X,
 } from 'lucide-react';
@@ -28,11 +29,22 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  highlight?: boolean;
+  permissions?: string[];
+}
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { isSuperAdmin, hasRole } = useAuth();
+  const { hasPermission } = useAuth();
 
-  const navItems = [
+  const canSee = (permissions?: string[]) =>
+    !permissions || permissions.length === 0 || permissions.some((permission) => hasPermission(permission));
+
+  const navItems: { title: string; items: NavItem[] }[] = [
     {
       title: 'OVERVIEW',
       items: [
@@ -42,41 +54,49 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           href: '/check-in',
           icon: Sparkles,
           highlight: true,
+          permissions: ['customer.read', 'visit.create'],
         },
       ],
     },
     {
       title: 'GUEST MANAGEMENT',
       items: [
-        { label: 'Customers', href: '/customers', icon: Users },
-        { label: 'Memberships', href: '/memberships', icon: CreditCard },
-        { label: 'Visits & Usage', href: '/visits', icon: Clock },
-        { label: 'Appointments', href: '/appointments', icon: Calendar },
+        { label: 'Customers', href: '/customers', icon: Users, permissions: ['customer.read'] },
+        { label: 'Memberships', href: '/memberships', icon: CreditCard, permissions: ['membership.read'] },
+        { label: 'Visits & Usage', href: '/visits', icon: Clock, permissions: ['visit.read'] },
+        { label: 'Appointments', href: '/appointments', icon: Calendar, permissions: ['appointment.read'] },
       ],
     },
     {
       title: 'OPERATIONS',
       items: [
-        { label: 'Services Menu', href: '/services', icon: Scissors },
-        { label: 'Plan Packages', href: '/plans', icon: Package },
-        { label: 'Staff & Therapists', href: '/staff', icon: UserCheck },
-        { label: 'Billing & Invoices', href: '/billing', icon: Receipt },
+        { label: 'Services Menu', href: '/services', icon: Scissors, permissions: ['service.read'] },
+        { label: 'Plan Packages', href: '/plans', icon: Package, permissions: ['plan.read'] },
+        { label: 'Staff & Therapists', href: '/staff', icon: UserCheck, permissions: ['staff.read'] },
+        {
+          label: 'Billing & Invoices',
+          href: '/billing',
+          icon: Receipt,
+          permissions: ['payment.read', 'invoice.read'],
+        },
       ],
     },
     {
       title: 'INTELLIGENCE & ADMIN',
       items: [
-        { label: 'Reports', href: '/reports', icon: BarChart3 },
-        ...(isSuperAdmin
-          ? [{ label: 'Branches', href: '/branches', icon: Building2 }]
-          : []),
-        ...(isSuperAdmin || hasRole('BRANCH_MANAGER')
-          ? [{ label: 'Audit Trail', href: '/audit-logs', icon: ShieldAlert }]
-          : []),
-        { label: 'Settings', href: '/settings', icon: Settings },
+        { label: 'Reports', href: '/reports', icon: BarChart3, permissions: ['report.read'] },
+        { label: 'Branches', href: '/branches', icon: Building2, permissions: ['branch.read'] },
+        { label: 'Audit Trail', href: '/audit-logs', icon: ShieldAlert, permissions: ['audit.read'] },
+        { label: 'Roles & access', href: '/access', icon: Shield, permissions: ['user.read', 'user.create'] },
+        { label: 'Settings', href: '/settings', icon: Settings, permissions: ['settings.read'] },
       ],
     },
-  ];
+  ]
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => canSee(item.permissions)),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <>

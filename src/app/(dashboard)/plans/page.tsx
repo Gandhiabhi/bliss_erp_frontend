@@ -33,7 +33,9 @@ interface ServiceItemInput {
 }
 
 export default function PlansPage() {
-  const { currentBranch } = useAuth();
+  const { currentBranch, hasPermission } = useAuth();
+  const canCreatePlan = hasPermission('plan.create');
+  const canDeletePlan = hasPermission('plan.delete');
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -177,16 +179,18 @@ export default function PlansPage() {
         title="Package Templates & Bundles"
         description="Configure standardized spa wellness packages, multi-session passes, and entitlements"
       >
-        <Button
-          variant="gold"
-          onClick={() => {
-            resetForm();
-            setIsCreateModalOpen(true);
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Package
-        </Button>
+        {canCreatePlan && (
+          <Button
+            variant="gold"
+            onClick={() => {
+              resetForm();
+              setIsCreateModalOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Package
+          </Button>
+        )}
       </PageHeader>
 
       {/* Filter and Search */}
@@ -213,6 +217,7 @@ export default function PlansPage() {
           title="No package templates found"
           description="Create structured spa wellness packages to streamline memberships and sales."
           action={
+            canCreatePlan ? (
             <Button
               variant="gold"
               onClick={() => {
@@ -223,6 +228,7 @@ export default function PlansPage() {
               <Plus className="w-4 h-4 mr-2" />
               Create First Package
             </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -289,7 +295,7 @@ export default function PlansPage() {
               {/* Footer */}
               <div className="flex justify-between items-center pt-3 border-t border-slate-100 text-xs text-slate-500">
                 <span>{plan._count?.memberships || 0} active subscriptions</span>
-                {plan.status === 'ACTIVE' && (
+                {plan.status === 'ACTIVE' && canDeletePlan && (
                   <Button
                     size="sm"
                     variant="ghost"

@@ -42,7 +42,8 @@ interface CustomServiceRow {
 }
 
 export default function MembershipsPage() {
-  const { currentBranch } = useAuth();
+  const { currentBranch, hasPermission } = useAuth();
+  const canEnrol = hasPermission('membership.create');
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -265,16 +266,18 @@ export default function MembershipsPage() {
         title="Memberships & Plans"
         description="Manage guest memberships, package allotments, and service entitlements"
       >
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsEnrolModalOpen(true);
-          }}
-          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Enrol Membership
-        </Button>
+        {canEnrol && (
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsEnrolModalOpen(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Enrol Membership
+          </Button>
+        )}
       </PageHeader>
 
       {/* Filter and Search Bar */}

@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { currentBranch, isSuperAdmin, setActiveBranchId } = useAuth();
+  const { currentBranch, isSuperAdmin, setActiveBranchId, hasPermission } = useAuth();
+  const canUpdateSettings = hasPermission('settings.update');
   const queryClient = useQueryClient();
 
   const [businessName, setBusinessName] = useState('');
@@ -268,6 +269,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {canUpdateSettings && (
           <div className="flex justify-end">
             <Button
               type="submit"
@@ -279,6 +281,7 @@ export default function SettingsPage() {
               {updateMutation.isPending ? 'Saving Settings...' : 'Save Settings'}
             </Button>
           </div>
+          )}
         </form>
       )}
     </div>

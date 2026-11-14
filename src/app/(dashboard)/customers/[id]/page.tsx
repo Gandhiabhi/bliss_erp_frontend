@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, ServiceEntitlement } from '@/lib/api/customers.api';
+import { useAuth } from '@/lib/auth/auth-context';
 import { CustomerDeskActions } from '@/components/customers/customer-desk';
 import { visitsApi } from '@/lib/api/visits.api';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
@@ -35,6 +36,8 @@ export default function CustomerProfilePage() {
   const params = useParams();
   const customerId = params.id as string;
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuth();
+  const canUseSession = hasPermission('visit.create');
 
   const [activeTab, setActiveTab] = useState<
     'overview' | 'memberships' | 'entitlements' | 'visits' | 'appointments' | 'billing' | 'notes'
@@ -295,6 +298,7 @@ export default function CustomerProfilePage() {
                           />
                         </div>
                       </div>
+                      {canUseSession && (
                       <Button
                         type="button"
                         size="sm"
@@ -304,6 +308,7 @@ export default function CustomerProfilePage() {
                       >
                         {e.remaining < 1 ? 'No sessions left' : 'Use 1 session today'}
                       </Button>
+                      )}
                     </div>
                   ))}
                 </div>

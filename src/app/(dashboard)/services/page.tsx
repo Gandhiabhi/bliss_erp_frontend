@@ -27,7 +27,9 @@ import {
 } from 'lucide-react';
 
 export default function ServicesPage() {
-  const { currentBranch, isSuperAdmin } = useAuth();
+  const { currentBranch, isSuperAdmin, hasPermission } = useAuth();
+  const canAddService = hasPermission('service.create');
+  const canEditService = hasPermission('service.update');
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -218,20 +220,24 @@ export default function ServicesPage() {
         title="Spa Treatment Catalog"
         description="Global spa services, duration variants, and branch-specific localized pricing"
       >
-        <Button variant="outline" onClick={() => setIsCategoryModalOpen(true)}>
-          <Tag className="w-4 h-4 mr-2" />
-          Add Category
-        </Button>
-        <Button
-          variant="gold"
-          onClick={() => {
-            resetCreateForm();
-            setIsCreateModalOpen(true);
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Treatment
-        </Button>
+        {canAddService && (
+          <Button variant="outline" onClick={() => setIsCategoryModalOpen(true)}>
+            <Tag className="w-4 h-4 mr-2" />
+            Add Category
+          </Button>
+        )}
+        {canAddService && (
+          <Button
+            variant="gold"
+            onClick={() => {
+              resetCreateForm();
+              setIsCreateModalOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Treatment
+          </Button>
+        )}
       </PageHeader>
 
       {/* Filter and Search Bar */}
@@ -274,13 +280,15 @@ export default function ServicesPage() {
           title="No treatments found"
           description="Create your first luxury treatment, massage, or facial therapy to get started."
           action={
-            <Button
-              variant="gold"
-              onClick={() => setIsCreateModalOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Treatment
-            </Button>
+            canAddService ? (
+              <Button
+                variant="gold"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Treatment
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -374,6 +382,7 @@ export default function ServicesPage() {
                 </div>
 
                 {/* Card Action Buttons */}
+                {canEditService && (
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
                   <Button
                     size="sm"
@@ -405,6 +414,7 @@ export default function ServicesPage() {
                     Branch Price
                   </Button>
                 </div>
+                )}
               </div>
             );
           })}
