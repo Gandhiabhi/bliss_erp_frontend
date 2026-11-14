@@ -30,10 +30,16 @@ import {
 } from 'lucide-react';
 
 export default function BillingPage() {
-  const { currentBranch } = useAuth();
+  const { currentBranch, hasPermission } = useAuth();
+  const canReadInvoices = hasPermission('invoice.read');
+  const canReadPayments = hasPermission('payment.read');
+  const canRecordPayment = hasPermission('payment.create');
+  const canRefund = hasPermission('payment.refund');
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'INVOICES' | 'PAYMENTS'>('INVOICES');
+  const [activeTab, setActiveTab] = useState<'INVOICES' | 'PAYMENTS'>(
+    hasPermission('invoice.read') ? 'INVOICES' : 'PAYMENTS'
+  );
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -65,7 +71,7 @@ export default function BillingPage() {
         page,
         limit,
       }),
-    enabled: activeTab === 'INVOICES',
+    enabled: activeTab === 'INVOICES' && canReadInvoices,
   });
 
   // Fetch Payments
@@ -78,7 +84,7 @@ export default function BillingPage() {
         page,
         limit,
       }),
-    enabled: activeTab === 'PAYMENTS',
+    enabled: activeTab === 'PAYMENTS' && canReadPayments,
   });
 
   // Fetch Customers for payment modal
@@ -174,20 +180,23 @@ export default function BillingPage() {
         title="Billing, Invoices & Payments"
         description="Comprehensive accounting, transaction snapshots, payment records, and refunds"
       >
-        <Button
-          onClick={() => {
-            resetPaymentForm();
-            setIsNewPaymentModalOpen(true);
-          }}
-          variant="gold"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Record Payment
-        </Button>
+        {canRecordPayment && (
+          <Button
+            onClick={() => {
+              resetPaymentForm();
+              setIsNewPaymentModalOpen(true);
+            }}
+            variant="gold"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Record Payment
+          </Button>
+        )}
       </PageHeader>
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200">
+        {canReadInvoices && (
         <button
           onClick={() => {
             setActiveTab('INVOICES');
@@ -202,7 +211,9 @@ export default function BillingPage() {
           <Receipt className="w-4 h-4" />
           Invoices & Bills
         </button>
+        )}
 
+        {canReadPayments && (
         <button
           onClick={() => {
             setActiveTab('PAYMENTS');
@@ -217,6 +228,7 @@ export default function BillingPage() {
           <CreditCard className="w-4 h-4" />
           Received Payments
         </button>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -390,7 +402,7 @@ export default function BillingPage() {
                           <StatusBadge status={p.status} />
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {p.status === 'PAID' && (
+                          {p.status === 'PAID' && canRefund && (
                             <Button
                               variant="ghost"
                               size="sm"

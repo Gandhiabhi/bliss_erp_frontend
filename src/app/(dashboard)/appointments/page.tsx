@@ -31,7 +31,9 @@ import {
 import Link from 'next/link';
 
 export default function AppointmentsPage() {
-  const { currentBranch } = useAuth();
+  const { currentBranch, hasPermission } = useAuth();
+  const canBook = hasPermission('appointment.create');
+  const canCancelAppointment = hasPermission('appointment.cancel');
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -193,6 +195,7 @@ export default function AppointmentsPage() {
         title="Appointments & Schedule"
         description="Book guest reservations, manage treatment slots, and assign spa therapists"
       >
+        {canBook && (
         <Button
           variant="gold"
           onClick={() => {
@@ -203,6 +206,7 @@ export default function AppointmentsPage() {
           <Plus className="w-4 h-4 mr-2" />
           Book Appointment
         </Button>
+        )}
       </PageHeader>
 
       {/* Filter and Date Bar */}
@@ -270,6 +274,7 @@ export default function AppointmentsPage() {
               : 'No appointments match the selected filters.'
           }
           action={
+            canBook ? (
             <Button
               variant="gold"
               onClick={() => setIsBookModalOpen(true)}
@@ -277,6 +282,7 @@ export default function AppointmentsPage() {
               <Plus className="w-4 h-4 mr-2" />
               Book Appointment
             </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -354,6 +360,7 @@ export default function AppointmentsPage() {
                       Check in
                     </Button>
                   </Link>
+                  {canCancelAppointment && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -367,6 +374,7 @@ export default function AppointmentsPage() {
                     <Trash2 className="w-3.5 h-3.5 mr-1" />
                     Delete
                   </Button>
+                  )}
                 </div>
               </div>
             </div>

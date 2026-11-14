@@ -24,7 +24,9 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { isSuperAdmin, activeBranchId, currentBranch } = useAuth();
+  const { isSuperAdmin, activeBranchId, currentBranch, hasPermission } = useAuth();
+  const canCheckIn = hasPermission('visit.create') || hasPermission('customer.read');
+  const canAddGuest = hasPermission('customer.create');
 
   const { data: statsRes, isLoading } = useQuery({
     queryKey: ['dashboard-stats', activeBranchId],
@@ -49,18 +51,22 @@ export default function DashboardPage() {
             : `Daily operations, guest check-ins, therapist appointments, and membership stats.`
         }
       >
-        <Link href="/check-in">
-          <Button variant="gold" size="lg">
-            <Sparkles className="w-5 h-5 mr-1.5" />
-            Fast Check-in
-          </Button>
-        </Link>
-        <Link href="/customers">
-          <Button variant="secondary" size="lg">
-            <Users className="w-5 h-5 mr-1.5" />
-            New Guest
-          </Button>
-        </Link>
+        {canCheckIn && (
+          <Link href="/check-in">
+            <Button variant="gold" size="lg">
+              <Sparkles className="w-5 h-5 mr-1.5" />
+              Fast Check-in
+            </Button>
+          </Link>
+        )}
+        {canAddGuest && (
+          <Link href="/customers">
+            <Button variant="secondary" size="lg">
+              <Users className="w-5 h-5 mr-1.5" />
+              New Guest
+            </Button>
+          </Link>
+        )}
       </PageHeader>
 
       {isLoading ? (

@@ -18,7 +18,8 @@ import { RegisterGuestModal } from '@/components/customers/register-guest-modal'
 import { Users, UserPlus, Phone, Mail, ArrowUpRight } from 'lucide-react';
 
 export default function CustomersPage() {
-  const { activeBranchId } = useAuth();
+  const { activeBranchId, hasPermission } = useAuth();
+  const canAddGuest = hasPermission('customer.create');
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -46,10 +47,12 @@ export default function CustomersPage() {
         title="Guest Directory"
         description="Comprehensive guest profiles, active membership plans, and treatment allocations."
       >
-        <Button variant="gold" onClick={() => setIsAddModalOpen(true)}>
-          <UserPlus className="w-4 h-4" />
-          Register New Guest
-        </Button>
+        {canAddGuest && (
+          <Button variant="gold" onClick={() => setIsAddModalOpen(true)}>
+            <UserPlus className="w-4 h-4" />
+            Register New Guest
+          </Button>
+        )}
       </PageHeader>
 
       {/* Filter and Search Bar */}
@@ -90,10 +93,12 @@ export default function CustomersPage() {
               description="Register new guests or modify your search criteria."
               icon={<Users className="w-10 h-10 text-slate-400" />}
               action={
-                <Button variant="gold" onClick={() => setIsAddModalOpen(true)}>
-                  <UserPlus className="w-4 h-4" />
-                  Add First Guest
-                </Button>
+                canAddGuest ? (
+                  <Button variant="gold" onClick={() => setIsAddModalOpen(true)}>
+                    <UserPlus className="w-4 h-4" />
+                    Add First Guest
+                  </Button>
+                ) : undefined
               }
             />
           </CardContent>

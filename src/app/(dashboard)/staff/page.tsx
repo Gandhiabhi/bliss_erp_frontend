@@ -28,7 +28,9 @@ import {
 } from 'lucide-react';
 
 export default function StaffPage() {
-  const { currentBranch, isSuperAdmin } = useAuth();
+  const { currentBranch, isSuperAdmin, hasPermission } = useAuth();
+  const canAddStaff = hasPermission('staff.create');
+  const canRemoveStaff = hasPermission('staff.delete');
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
@@ -123,16 +125,18 @@ export default function StaffPage() {
         title="Staff & Spa Therapists"
         description="Manage branch personnel, therapist specializations, and service delivery performance"
       >
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsAddModalOpen(true);
-          }}
-          variant="gold"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Staff Member
-        </Button>
+        {canAddStaff && (
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsAddModalOpen(true);
+            }}
+            variant="gold"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Staff Member
+          </Button>
+        )}
       </PageHeader>
 
       {/* Filter and Search Bar */}
@@ -159,6 +163,7 @@ export default function StaffPage() {
           title="No staff members registered"
           description="Add your team of massage therapists, aestheticians, and reception staff."
           action={
+            canAddStaff ? (
             <Button
               onClick={() => setIsAddModalOpen(true)}
               variant="gold"
@@ -166,6 +171,7 @@ export default function StaffPage() {
               <Plus className="w-4 h-4 mr-2" />
               Add First Staff Member
             </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -238,7 +244,7 @@ export default function StaffPage() {
 
               {/* Action */}
               <div className="flex justify-end pt-3 border-t border-slate-100 text-xs">
-                {member.status === 'ACTIVE' && (
+                {member.status === 'ACTIVE' && canRemoveStaff && (
                   <Button
                     size="sm"
                     variant="ghost"

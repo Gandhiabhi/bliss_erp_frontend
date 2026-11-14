@@ -15,6 +15,7 @@ import { membershipsApi } from '@/lib/api/memberships.api';
 import { paymentFields, PAYMENT_CHOICES } from '@/lib/payment-methods';
 import { formatCurrency, validityLabel } from '@/lib/utils';
 import { GuestPlanServicesEditor, GuestServiceRow, rowsFromPlan } from '@/components/customers/guest-plan-services';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Pencil, Sparkles, CreditCard } from 'lucide-react';
 
 export function CustomerDeskActions({
@@ -25,6 +26,10 @@ export function CustomerDeskActions({
   compact?: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuth();
+  const canEditGuest = hasPermission('customer.update');
+  const canAddService = hasPermission('visit.create');
+  const canAddMembership = hasPermission('membership.create');
   const [mode, setMode] = useState<'edit' | 'service' | 'membership' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -171,27 +176,37 @@ export function CustomerDeskActions({
     <>
       {compact ? (
         <div className="flex flex-col items-stretch gap-1.5 min-w-[132px]">
-          <Button size="sm" variant="gold" onClick={() => { setError(null); setMode('service'); }}>
-            Add service
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => { setError(null); setMode('membership'); }}>
-            Add membership
-          </Button>
+          {canAddService && (
+            <Button size="sm" variant="gold" onClick={() => { setError(null); setMode('service'); }}>
+              Add service
+            </Button>
+          )}
+          {canAddMembership && (
+            <Button size="sm" variant="outline" onClick={() => { setError(null); setMode('membership'); }}>
+              Add membership
+            </Button>
+          )}
         </div>
       ) : (
         <>
-          <Button variant="secondary" size="md" onClick={() => { setError(null); setMode('edit'); }}>
-            <Pencil className="w-4 h-4" />
-            Edit details
-          </Button>
-          <Button variant="gold" size="md" onClick={() => { setError(null); setMode('service'); }}>
-            <Sparkles className="w-4 h-4" />
-            Add service
-          </Button>
-          <Button variant="gold" size="md" onClick={() => { setError(null); setMode('membership'); }}>
-            <CreditCard className="w-4 h-4" />
-            Add membership
-          </Button>
+          {canEditGuest && (
+            <Button variant="secondary" size="md" onClick={() => { setError(null); setMode('edit'); }}>
+              <Pencil className="w-4 h-4" />
+              Edit details
+            </Button>
+          )}
+          {canAddService && (
+            <Button variant="gold" size="md" onClick={() => { setError(null); setMode('service'); }}>
+              <Sparkles className="w-4 h-4" />
+              Add service
+            </Button>
+          )}
+          {canAddMembership && (
+            <Button variant="gold" size="md" onClick={() => { setError(null); setMode('membership'); }}>
+              <CreditCard className="w-4 h-4" />
+              Add membership
+            </Button>
+          )}
         </>
       )}
 
